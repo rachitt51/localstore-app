@@ -1,0 +1,23 @@
+name: User story
+description: A feature from the customer or owner point of view
+labels: [feature]
+body:
+  - type: input
+    id: story
+    attributes:
+      label: Story
+      placeholder: As a <customer|owner|staff>, I want <…> so that <…>
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: "- [ ] Given … when … then …"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / links
+      placeholder: Proposal section, design link, related issues
