@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/redirect.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/auth/session.dart';
@@ -106,7 +108,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .read(authRepositoryProvider)
           .verifyOtp(_normalizedPhone, code);
       await ref.read(sessionProvider.notifier).signIn(tokens);
-      // The router's refreshListenable now redirects away from /login.
+      // Navigate explicitly rather than relying on the router's
+      // refreshListenable alone: on-device the refresh did not re-run the
+      // redirect for a pushed /login, leaving the user on this screen.
+      if (!mounted) return;
+      context.go(landingFor(tokens.user, from: widget.from));
     } catch (e) {
       if (mounted) setState(() => _error = errorMessage(e));
     } finally {

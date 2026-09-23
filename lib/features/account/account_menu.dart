@@ -81,6 +81,8 @@ class AccountMenuButton extends ConsumerWidget {
         context.go('/owner');
       case _AccountAction.signOut:
         await ref.read(sessionProvider.notifier).signOut();
+        // Leave any signed-in-only screen explicitly (see LoginScreen).
+        if (context.mounted) context.go('/');
     }
   }
 }

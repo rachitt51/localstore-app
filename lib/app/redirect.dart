@@ -17,8 +17,12 @@ bool isOwnerPath(String path) => path == '/owner' || path.startsWith('/owner/');
 
 /// Where a user lands right after signing in.
 String landingFor(User user, {String? from}) {
+  // Owner/staff go to owner mode unless they were heading somewhere in it.
+  if (user.isStaff) {
+    return from != null && isOwnerPath(Uri.parse(from).path) ? from : '/owner';
+  }
   if (from != null && from.isNotEmpty && from != '/') return from;
-  return user.isStaff ? '/owner' : '/';
+  return '/';
 }
 
 /// Pure redirect rule for the router (unit-tested). Returns the location to

@@ -44,9 +44,43 @@ final routerProvider = Provider<GoRouter>((ref) {
   return router;
 });
 
-/// Detail routes are children of a tab so `go()` builds a sensible stack,
-/// but render on the root navigator (no bottom bar).
+/// Product and order detail routes are children of their tab so `go()`
+/// builds a sensible stack, but render on the root navigator (no bottom bar).
+///
+/// The funnel routes (login, cart, checkout, address book) are deliberately
+/// top-level: a StatefulShellBranch remembers its last location, so if
+/// `/login` or `/checkout` lived under the Home tab, tapping Home later would
+/// restore that page (and `/login` would then redirect straight back out).
 List<RouteBase> buildRoutes() => [
+  GoRoute(
+    path: '/login',
+    parentNavigatorKey: rootNavigatorKey,
+    builder: (context, state) =>
+        LoginScreen(from: state.uri.queryParameters['from']),
+  ),
+  GoRoute(
+    path: '/cart',
+    parentNavigatorKey: rootNavigatorKey,
+    builder: (context, state) => const CartScreen(),
+  ),
+  GoRoute(
+    path: '/checkout',
+    parentNavigatorKey: rootNavigatorKey,
+    builder: (context, state) => const CheckoutScreen(),
+  ),
+  GoRoute(
+    path: '/checkout/address',
+    parentNavigatorKey: rootNavigatorKey,
+    builder: (context, state) => AddressScreen(
+      selectMode: true,
+      popOnSelect: state.uri.queryParameters['change'] == '1',
+    ),
+  ),
+  GoRoute(
+    path: '/account/addresses',
+    parentNavigatorKey: rootNavigatorKey,
+    builder: (context, state) => const AddressScreen(selectMode: false),
+  ),
   StatefulShellRoute.indexedStack(
     builder: (context, state, shell) => CustomerShell(shell: shell),
     branches: [
@@ -61,36 +95,6 @@ List<RouteBase> buildRoutes() => [
                 parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) =>
                     ProductScreen(productId: state.pathParameters['id']!),
-              ),
-              GoRoute(
-                path: 'cart',
-                parentNavigatorKey: rootNavigatorKey,
-                builder: (context, state) => const CartScreen(),
-              ),
-              GoRoute(
-                path: 'checkout',
-                parentNavigatorKey: rootNavigatorKey,
-                builder: (context, state) => const CheckoutScreen(),
-              ),
-              GoRoute(
-                path: 'checkout/address',
-                parentNavigatorKey: rootNavigatorKey,
-                builder: (context, state) => AddressScreen(
-                  selectMode: true,
-                  popOnSelect: state.uri.queryParameters['change'] == '1',
-                ),
-              ),
-              GoRoute(
-                path: 'account/addresses',
-                parentNavigatorKey: rootNavigatorKey,
-                builder: (context, state) =>
-                    const AddressScreen(selectMode: false),
-              ),
-              GoRoute(
-                path: 'login',
-                parentNavigatorKey: rootNavigatorKey,
-                builder: (context, state) =>
-                    LoginScreen(from: state.uri.queryParameters['from']),
               ),
             ],
           ),

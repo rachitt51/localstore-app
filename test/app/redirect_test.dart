@@ -88,7 +88,7 @@ void main() {
       );
     });
 
-    test('land on /owner after login unless a deep link was requested', () {
+    test('land on /owner after login unless an owner deep link was requested', () {
       expect(redirect(const SessionState.signedIn(owner), '/login'), '/owner');
       expect(
         redirect(
@@ -97,12 +97,20 @@ void main() {
         ),
         '/owner',
       );
+      // A customer-side `from` (e.g. the Orders tab) still lands in owner mode.
       expect(
         redirect(
           const SessionState.signedIn(staff),
           '/login?from=${Uri.encodeComponent('/orders')}',
         ),
-        '/orders',
+        '/owner',
+      );
+      expect(
+        redirect(
+          const SessionState.signedIn(staff),
+          '/login?from=${Uri.encodeComponent('/owner/orders/o1')}',
+        ),
+        '/owner/orders/o1',
       );
     });
   });

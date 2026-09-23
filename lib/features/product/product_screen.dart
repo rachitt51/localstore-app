@@ -64,6 +64,9 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
+            // Short: the timer restarts on route transitions, so a long one
+            // follows the user through the checkout funnel.
+            duration: const Duration(seconds: 2),
             content: Text('Added $_qty to cart'),
             action: SnackBarAction(
               label: 'View cart',
