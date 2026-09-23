@@ -6,6 +6,7 @@ Flutter (Dart) client for a single-vendor local-store app: customer storefront p
 - `../localstore-api/docs/scope.md` — what is and is not in the MVP (Bootstrap tier of the client proposal).
 - `../localstore-api/docs/domain-model.md` — entities, order state machine, pricing rules.
 - `../localstore-api/docs/api-surface.md` — routes and roles the app consumes.
+- `../localstore-api/docs/app-ux.md` — this app's screen map, flows, state architecture, design system and build order.
 
 ## Commands
 - `flutter pub get`, `flutter run` (emulator reaches the host API at `http://10.0.2.2:3000`).
