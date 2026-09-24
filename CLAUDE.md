@@ -7,6 +7,11 @@ Flutter (Dart) client for a single-vendor local-store app: customer storefront p
 - `../localstore-api/docs/domain-model.md` — entities, order state machine, pricing rules.
 - `../localstore-api/docs/api-surface.md` — routes and roles the app consumes.
 - `../localstore-api/docs/app-ux.md` — this app's screen map, flows, state architecture, design system and build order.
+- `../localstore-api/docs/demo-v0.md` — the exact API contract and screen list of the current demo build; wins where the other docs disagree.
+
+## Demo
+- API must run with `PUBLIC_BASE_URL=http://10.0.2.2:3000` for images on the emulator; debug builds allow cleartext HTTP (`android/app/src/debug/AndroidManifest.xml`), release builds do not.
+- Demo logins (OTP shown/prefilled from the API's `devCode`): owner `+919999999999`, staff `+919999999998`, customer `+919999999990`.
 
 ## Commands
 - `flutter pub get`, `flutter run` (emulator reaches the host API at `http://10.0.2.2:3000`).
