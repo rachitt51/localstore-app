@@ -91,6 +91,24 @@ void main() {
       expect(cart.hasBlockingWarnings, isFalse);
     });
 
+    test('quote adds codAllowed and codReason to the cart shape', () {
+      final q = Quote.fromJson({
+        ...cartJson(),
+        'codAllowed': false,
+        'codReason': 'ABOVE_COD_MAX',
+      });
+      expect(q.items, hasLength(2));
+      expect(q.total, '5680.00');
+      expect(q.warningFor('v9')?.code, 'OUT_OF_STOCK');
+      expect(q.hasBlockingWarnings, isTrue);
+      expect(q.codAllowed, isFalse);
+      expect(q.codReason, 'ABOVE_COD_MAX');
+
+      final ok = Quote.fromJson({...cartJson(), 'codAllowed': true});
+      expect(ok.codAllowed, isTrue);
+      expect(ok.codReason, isNull);
+    });
+
     test('warning messages', () {
       expect(
         const CartWarning(

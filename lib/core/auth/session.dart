@@ -78,10 +78,12 @@ class SessionNotifier extends Notifier<SessionState> {
     state = SessionState.signedIn(tokens.user);
   }
 
-  /// The interceptor rotated the tokens; persist them with the current user.
+  /// The interceptor rotated the tokens; persist them with the current user
+  /// and tell token-bound connections (the realtime socket) to reconnect.
   Future<void> tokensRefreshed(AuthTokens tokens) async {
     _cache.set(tokens);
     await _persist(state.user ?? tokens.user);
+    ref.read(tokenGenerationProvider.notifier).bump();
   }
 
   Future<void> updateName(String name) async {
@@ -116,4 +118,18 @@ class SessionNotifier extends Notifier<SessionState> {
 
 final sessionProvider = NotifierProvider<SessionNotifier, SessionState>(
   SessionNotifier.new,
+);
+
+/// Counts token rotations ([SessionNotifier.tokensRefreshed]). The session
+/// state itself does not change on a refresh (same user), so anything that
+/// holds a connection authenticated with the access token listens to this.
+class TokenGenerationNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() => state = state + 1;
+}
+
+final tokenGenerationProvider = NotifierProvider<TokenGenerationNotifier, int>(
+  TokenGenerationNotifier.new,
 );

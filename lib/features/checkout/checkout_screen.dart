@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/models/cart.dart';
 import '../../core/models/order.dart';
 import '../../core/models/store.dart';
 import '../../core/ui/back_or_home_button.dart';
@@ -11,9 +12,11 @@ import '../../core/ui/format.dart';
 import '../../core/ui/image_placeholder.dart';
 import '../../core/ui/price_text.dart';
 import '../../core/ui/section.dart';
+import '../../core/ui/skeleton.dart';
 import '../cart/cart_notifier.dart';
 import '../home/home_providers.dart';
 import '../orders/orders_repository.dart';
+import 'buy_now_quote.dart';
 import 'checkout_draft.dart';
 
 /// Summary lines, address, payment method, notes, "Place order".
@@ -37,15 +40,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     super.dispose();
   }
 
-  /// Why COD is not available, or null when it is.
+  /// Why COD is not available for a cart checkout, or null when it is. The
+  /// Buy-now path uses the quote's `codAllowed`/`codReason` instead.
   String? _codBlockedReason(StoreInfo? store, String? total) {
     if (store == null) return null;
-    if (!store.codEnabled) return 'Cash on delivery is not available';
+    if (!store.codEnabled) return codReasonMessage('COD_DISABLED');
     final cap = store.codMaxAmount;
     if (cap != null && total != null && compareMoney(total, cap) > 0) {
-      return 'Cash on delivery is available up to ${formatInr(cap)}';
+      return codReasonMessage('ABOVE_COD_MAX', codMaxAmount: cap);
     }
     return null;
+  }
+
+  /// Why COD is not available for a Buy-now checkout. Falls back to the
+  /// store-level check while the quote is loading or failed.
+  String? _quoteCodBlockedReason(StoreInfo? store, AsyncValue<Quote?> quote) {
+    final q = quote.value;
+    if (q == null) return _codBlockedReason(store, null);
+    if (q.codAllowed) return null;
+    return codReasonMessage(q.codReason, codMaxAmount: store?.codMaxAmount);
   }
 
   Future<void> _placeOrder() async {
@@ -91,13 +104,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final draft = ref.watch(checkoutDraftProvider);
     final store = ref.watch(storeProvider).value;
     final cart = ref.watch(cartProvider);
-    final text = Theme.of(context).textTheme;
+    // Only a Buy-now draft needs a quote; a cart draft carries its totals.
+    final quote = draft.isBuyNow
+        ? ref.watch(buyNowQuoteProvider)
+        : const AsyncValue<Quote?>.data(null);
     final scheme = Theme.of(context).colorScheme;
 
-    final total = draft.isBuyNow ? null : cart.value?.total;
-    final codReason = _codBlockedReason(store, total);
+    final codReason = draft.isBuyNow
+        ? _quoteCodBlockedReason(store, quote)
+        : _codBlockedReason(store, cart.value?.total);
     final storeClosed = store != null && !store.isOpen;
     final cartEmpty = !draft.isBuyNow && (cart.value?.isEmpty ?? false);
+    final quoteLoading = draft.isBuyNow && quote.isLoading;
+    final blockingWarnings = draft.isBuyNow
+        ? (quote.value?.hasBlockingWarnings ?? false)
+        : (cart.value?.hasBlockingWarnings ?? false);
 
     return Scaffold(
       appBar: AppBar(
@@ -113,34 +134,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 Section(
                   title: 'Items',
                   child: draft.isBuyNow
-                      ? Column(
-                          children: [
-                            for (final i in draft.pendingItems!)
-                              _SummaryLine(
-                                name: i.name,
-                                variantName: i.variantName,
-                                unit: i.unit,
-                                unitPrice: i.unitPrice,
-                                qty: i.qty,
-                                imageUrl: i.imageUrl,
-                              ),
-                          ],
-                        )
+                      ? _BuyNowItems(items: draft.pendingItems!, quote: quote)
                       : cart.when(
-                          data: (c) => Column(
-                            children: [
-                              for (final l in c.items)
-                                _SummaryLine(
-                                  name: l.name,
-                                  variantName: l.variantName,
-                                  unit: l.unit,
-                                  unitPrice: l.unitPrice,
-                                  qty: l.qty,
-                                  lineTotal: l.lineTotal,
-                                  imageUrl: l.imageUrl,
-                                ),
-                            ],
-                          ),
+                          data: (c) => _CartLines(cart: c),
                           loading: () => const LinearProgressIndicator(),
                           error: (e, _) => Text(errorMessage(e)),
                         ),
@@ -148,37 +144,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 Section(
                   title: 'Total',
                   child: draft.isBuyNow
-                      ? Text(
-                          'The total is calculated by the store when you '
-                          'place the order and shown on the order screen.',
-                          style: text.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
+                      ? quote.when(
+                          skipLoadingOnRefresh: false,
+                          data: (q) => _BillBreakdown(cart: q),
+                          loading: () => const _BillSkeleton(),
+                          error: (e, _) => _QuoteError(
+                            error: e,
+                            onRetry: () => ref.invalidate(buyNowQuoteProvider),
                           ),
                         )
-                      : Column(
-                          children: [
-                            KeyValueRow(
-                              label: 'Subtotal',
-                              value: PriceText(
-                                cart.value?.subtotal ?? '0.00',
-                                style: text.bodyMedium,
-                              ),
-                            ),
-                            KeyValueRow(
-                              label: 'Delivery',
-                              value: PriceText(
-                                cart.value?.deliveryFee ?? '0.00',
-                                style: text.bodyMedium,
-                              ),
-                            ),
-                            const Divider(),
-                            KeyValueRow(
-                              label: 'Total',
-                              emphasize: true,
-                              value: PriceText(cart.value?.total ?? '0.00'),
-                            ),
-                          ],
-                        ),
+                      : _BillBreakdown(cart: cart.value),
                 ),
                 Section(
                   title: 'Deliver to',
@@ -269,6 +244,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       _placing ||
                           storeClosed ||
                           cartEmpty ||
+                          quoteLoading ||
+                          blockingWarnings ||
                           (draft.paymentMethod == PaymentMethod.cod &&
                               codReason != null)
                       ? null
@@ -276,6 +253,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   child: Text(
                     storeClosed
                         ? 'Store is closed'
+                        : blockingWarnings
+                        ? 'Fix the items above to continue'
                         : _placing
                         ? 'Placing order…'
                         : 'Place order',
@@ -290,6 +269,136 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 }
 
+/// Buy-now lines: the quoted lines (with line totals and warnings) once the
+/// quote is in; the draft's lines from the product screen until then.
+class _BuyNowItems extends StatelessWidget {
+  const _BuyNowItems({required this.items, required this.quote});
+
+  final List<PendingItem> items;
+  final AsyncValue<Quote?> quote;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = quote.value;
+    if (q != null) return _CartLines(cart: q);
+    return Column(
+      children: [
+        for (final i in items)
+          _SummaryLine(
+            name: i.name,
+            variantName: i.variantName,
+            unit: i.unit,
+            unitPrice: i.unitPrice,
+            qty: i.qty,
+            imageUrl: i.imageUrl,
+          ),
+      ],
+    );
+  }
+}
+
+/// Lines of an API-priced [Cart] (or [Quote]) with per-line warnings.
+class _CartLines extends StatelessWidget {
+  const _CartLines({required this.cart});
+
+  final Cart cart;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final l in cart.items)
+          _SummaryLine(
+            name: l.name,
+            variantName: l.variantName,
+            unit: l.unit,
+            unitPrice: l.unitPrice,
+            qty: l.qty,
+            lineTotal: l.lineTotal,
+            imageUrl: l.imageUrl,
+            warning: cart.warningFor(l.variantId),
+          ),
+      ],
+    );
+  }
+}
+
+/// Subtotal / delivery / total, exactly as the API returned them.
+class _BillBreakdown extends StatelessWidget {
+  const _BillBreakdown({required this.cart});
+
+  final Cart? cart;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Column(
+      children: [
+        KeyValueRow(
+          label: 'Subtotal',
+          value: PriceText(cart?.subtotal ?? '0.00', style: text.bodyMedium),
+        ),
+        KeyValueRow(
+          label: 'Delivery',
+          value: PriceText(cart?.deliveryFee ?? '0.00', style: text.bodyMedium),
+        ),
+        const Divider(),
+        KeyValueRow(
+          label: 'Total',
+          emphasize: true,
+          value: PriceText(cart?.total ?? '0.00'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Placeholder for [_BillBreakdown] while the quote loads.
+class _BillSkeleton extends StatelessWidget {
+  const _BillSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget row(double width) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          const Skeleton(width: 72, height: 14),
+          const Spacer(),
+          Skeleton(width: width, height: 14),
+        ],
+      ),
+    );
+    return Column(children: [row(64), row(48), const Divider(), row(88)]);
+  }
+}
+
+/// The quote failed: keep the screen usable and offer a retry.
+class _QuoteError extends StatelessWidget {
+  const _QuoteError({required this.error, required this.onRetry});
+
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InlineError("Couldn't get the total: ${errorMessage(error)}"),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SummaryLine extends StatelessWidget {
   const _SummaryLine({
     required this.name,
@@ -299,6 +408,7 @@ class _SummaryLine extends StatelessWidget {
     required this.qty,
     this.lineTotal,
     this.imageUrl,
+    this.warning,
   });
 
   final String name;
@@ -308,6 +418,7 @@ class _SummaryLine extends StatelessWidget {
   final int qty;
   final String? lineTotal;
   final String? imageUrl;
+  final CartWarning? warning;
 
   @override
   Widget build(BuildContext context) {
@@ -315,39 +426,61 @@ class _SummaryLine extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: SizedBox(
-              width: 44,
-              height: 44,
-              child: ProductImage(url: imageUrl, iconSize: 20),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  variantName == null || variantName!.isEmpty
-                      ? name
-                      : '$name · $variantName',
-                  style: text.bodyMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: ProductImage(url: imageUrl, iconSize: 20),
                 ),
-                Text(
-                  '$qty × ${formatInr(unitPrice)} / $unit',
-                  style: text.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      variantName == null || variantName!.isEmpty
+                          ? name
+                          : '$name · $variantName',
+                      style: text.bodyMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '$qty × ${formatInr(unitPrice)} / $unit',
+                      style: text.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (lineTotal != null)
+                PriceText(lineTotal!, style: text.bodyMedium),
+            ],
+          ),
+          if (warning != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 56),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber, size: 16, color: scheme.error),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      warning!.message,
+                      style: text.bodySmall?.copyWith(color: scheme.error),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          if (lineTotal != null) PriceText(lineTotal!, style: text.bodyMedium),
         ],
       ),
     );

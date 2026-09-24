@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/models/cart.dart';
 import '../../core/models/json.dart';
 import '../../core/models/order.dart';
 import '../../core/models/paged.dart';
@@ -48,6 +49,23 @@ class OrdersRepository {
       ),
     ),
   );
+
+  /// Prices [items] exactly as [create] would, without creating anything.
+  /// Used by the Buy-now checkout to show the total before placing.
+  Future<Quote> quote(List<OrderItemInput> items, {String? addressId}) async =>
+      Quote.fromJson(
+        asJson(
+          await _api.post(
+            '/orders/quote',
+            body: {
+              'items': [
+                for (final i in items) {'variantId': i.variantId, 'qty': i.qty},
+              ],
+              'addressId': ?addressId,
+            },
+          ),
+        ),
+      );
 
   Future<Order> cancel(String id, {String? reason}) async => Order.fromJson(
     asJson(

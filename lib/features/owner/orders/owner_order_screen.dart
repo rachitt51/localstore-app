@@ -5,6 +5,7 @@ import '../../../core/api/api_exception.dart';
 import '../../../core/models/order.dart';
 import '../../../core/ui/back_or_home_button.dart';
 import '../../../core/ui/error_state.dart';
+import '../../../core/ui/live_indicator.dart';
 import '../../../core/ui/order_status.dart';
 import '../../../core/ui/section.dart';
 import '../../../core/ui/skeleton.dart';
@@ -72,6 +73,7 @@ class _OwnerOrderScreenState extends ConsumerState<OwnerOrderScreen> {
         title: Text(
           order.value == null ? 'Order' : 'Order #${order.value!.orderNumber}',
         ),
+        actions: const [LiveIndicator()],
       ),
       body: order.when(
         data: (o) => Column(

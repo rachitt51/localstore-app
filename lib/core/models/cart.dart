@@ -118,3 +118,35 @@ class Cart {
     (w) => w.code == 'OUT_OF_STOCK' || w.code == 'INSUFFICIENT_STOCK',
   );
 }
+
+/// `POST /orders/quote`: a [Cart]-shaped pricing of arbitrary lines (Buy now)
+/// plus whether cash on delivery would be accepted for this total.
+class Quote extends Cart {
+  const Quote({
+    required super.items,
+    required super.subtotal,
+    required super.deliveryFee,
+    required super.total,
+    required super.warnings,
+    required this.codAllowed,
+    this.codReason,
+  });
+
+  factory Quote.fromJson(Json json) {
+    final cart = Cart.fromJson(json);
+    return Quote(
+      items: cart.items,
+      subtotal: cart.subtotal,
+      deliveryFee: cart.deliveryFee,
+      total: cart.total,
+      warnings: cart.warnings,
+      codAllowed: asBool(json['codAllowed'], true),
+      codReason: asStringOrNull(json['codReason']),
+    );
+  }
+
+  final bool codAllowed;
+
+  /// `COD_DISABLED | ABOVE_COD_MAX`, present only when [codAllowed] is false.
+  final String? codReason;
+}

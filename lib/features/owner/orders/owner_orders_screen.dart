@@ -10,7 +10,8 @@ import '../../../core/ui/skeleton.dart';
 import '../../orders/orders_screen.dart';
 import 'owner_orders_notifier.dart';
 
-/// `/owner`: summary strip + segmented queue, polled every 10 s.
+/// `/owner`: summary strip + segmented queue. Refreshed on every realtime
+/// `order.updated`; polled every 60 s as a fallback.
 class OwnerOrdersScreen extends ConsumerStatefulWidget {
   const OwnerOrdersScreen({super.key});
 

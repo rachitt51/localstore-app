@@ -4,13 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/order.dart';
 import '../../core/models/paged.dart';
+import '../../core/realtime/realtime.dart';
 import 'orders_repository.dart';
 
-/// Order history, newest first, with cursor paging.
+/// Order history, newest first, with cursor paging. Refreshes on every
+/// realtime `order.updated` (a new order or a status change of any own order).
 class OrdersListNotifier extends AsyncNotifier<Paged<OrderSummary>> {
   @override
-  Future<Paged<OrderSummary>> build() =>
-      ref.read(ordersRepositoryProvider).list();
+  Future<Paged<OrderSummary>> build() {
+    ref.listen(orderUpdatesProvider, (_, next) {
+      if (next.hasValue) refresh();
+    });
+    return ref.read(ordersRepositoryProvider).list();
+  }
 
   Future<void> refresh() async {
     state = await AsyncValue.guard(ref.read(ordersRepositoryProvider).list);
@@ -31,10 +37,13 @@ final ordersListProvider =
       OrdersListNotifier.new,
     );
 
-/// Interval between `GET /orders/:id` polls while the order is live.
-const orderPollInterval = Duration(seconds: 5);
+/// Fallback interval between `GET /orders/:id` polls while the order is live.
+/// Realtime events trigger an immediate re-fetch; this only covers a socket
+/// that is down (`demo-v0.md`, Realtime: customer order 30 s).
+const orderPollInterval = Duration(seconds: 30);
 
-/// One order, polled every [orderPollInterval] until its status is terminal.
+/// One order: re-fetched on its `order.updated` events, polled every
+/// [orderPollInterval] as a fallback until its status is terminal.
 class OrderDetailNotifier extends AsyncNotifier<Order> {
   OrderDetailNotifier(this.orderId);
 
@@ -44,6 +53,9 @@ class OrderDetailNotifier extends AsyncNotifier<Order> {
   @override
   Future<Order> build() async {
     ref.onDispose(_stopPolling);
+    ref.listen(orderUpdatesProvider, (_, next) {
+      if (next.value?.orderId == orderId) refresh();
+    });
     final order = await ref.read(ordersRepositoryProvider).get(orderId);
     _syncPolling(order);
     return order;

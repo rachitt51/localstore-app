@@ -6,6 +6,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/models/order.dart';
 import '../../core/ui/back_or_home_button.dart';
 import '../../core/ui/error_state.dart';
+import '../../core/ui/live_indicator.dart';
 import '../../core/ui/skeleton.dart';
 import 'orders_notifier.dart';
 import 'widgets/order_body.dart';
@@ -13,7 +14,8 @@ import 'widgets/order_status_header.dart';
 import 'widgets/reason_sheet.dart';
 
 /// Live customer order: status header, ETA countdown, timeline, items,
-/// cancel. Polls every 5 s while the status is not terminal.
+/// cancel. Re-fetched on realtime `order.updated`; polls every 30 s as a
+/// fallback while the status is not terminal.
 class OrderScreen extends ConsumerStatefulWidget {
   const OrderScreen({super.key, required this.orderId});
 
@@ -60,6 +62,7 @@ class _OrderScreenState extends ConsumerState<OrderScreen> {
         title: Text(
           order.value == null ? 'Order' : 'Order #${order.value!.orderNumber}',
         ),
+        actions: const [LiveIndicator()],
       ),
       body: order.when(
         data: (o) => RefreshIndicator(
