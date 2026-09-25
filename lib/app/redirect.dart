@@ -8,6 +8,7 @@ const protectedPrefixes = [
   '/orders',
   '/account',
   '/owner',
+  '/visit',
 ];
 
 bool isProtectedPath(String path) =>
