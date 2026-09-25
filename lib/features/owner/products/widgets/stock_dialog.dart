@@ -122,10 +122,12 @@ class _StockDialogState extends ConsumerState<_StockDialog> {
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(64, 40)),
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
         FilledButton(
+          style: FilledButton.styleFrom(minimumSize: const Size(64, 40)),
           onPressed: _saving ? null : _save,
           child: const Text('Save'),
         ),

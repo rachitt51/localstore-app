@@ -7,6 +7,7 @@ import '../../core/models/order.dart';
 import '../../core/ui/back_or_home_button.dart';
 import '../../core/ui/error_state.dart';
 import '../../core/ui/format.dart';
+import '../../core/ui/price_text.dart';
 import '../../core/ui/skeleton.dart';
 import '../orders/orders_notifier.dart';
 
@@ -114,13 +115,7 @@ class _MockPaymentScreenState extends ConsumerState<MockPaymentScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  formatInr(o.total),
-                  style: text.displaySmall?.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                Center(child: PriceText(o.total, size: PriceSize.xl)),
                 const SizedBox(height: 8),
                 Text(
                   'Demo gateway: nothing is charged.',
@@ -136,7 +131,7 @@ class _MockPaymentScreenState extends ConsumerState<MockPaymentScreen> {
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: scheme.errorContainer,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'Payment failed. You can try again or cancel the order.',

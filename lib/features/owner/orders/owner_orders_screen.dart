@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/order.dart';
 import '../../../core/ui/empty_state.dart';
 import '../../../core/ui/error_state.dart';
-import '../../../core/ui/format.dart';
+import '../../../core/ui/order_status.dart';
+import '../../../core/ui/price_text.dart';
 import '../../../core/ui/skeleton.dart';
 import '../../orders/orders_screen.dart';
 import 'owner_orders_notifier.dart';
@@ -26,13 +27,18 @@ class _OwnerOrdersScreenState extends ConsumerState<OwnerOrdersScreen> {
   Widget build(BuildContext context) {
     final summary = ref.watch(ownerSummaryProvider);
     final queue = ref.watch(ownerQueueProvider(_segment));
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         summary.when(
-          data: (s) => _SummaryStrip(summary: s),
+          data: (s) => _SummaryStrip(
+            summary: s,
+            segment: _segment,
+            onSelect: (s) => setState(() => _segment = s),
+          ),
           loading: () => const Padding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Skeleton(height: 72, radius: 12),
+            child: Skeleton(height: 136, radius: 8),
           ),
           error: (_, _) => const SizedBox.shrink(),
         ),
@@ -41,7 +47,16 @@ class _OwnerOrdersScreenState extends ConsumerState<OwnerOrdersScreen> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SegmentedButton<QueueSegment>(
-              showSelectedIcon: false,
+              showSelectedIcon: true,
+              style: SegmentedButton.styleFrom(
+                minimumSize: const Size(64, 40),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                side: BorderSide(color: scheme.outline),
+                selectedBackgroundColor: scheme.secondaryContainer,
+                selectedForegroundColor: scheme.onSecondaryContainer,
+              ),
               segments: [
                 for (final s in QueueSegment.values)
                   ButtonSegment(value: s, label: Text(s.label)),
@@ -101,47 +116,152 @@ class _OwnerOrdersScreenState extends ConsumerState<OwnerOrdersScreen> {
   }
 }
 
+/// Owner Orders-queue strip (SummaryTile): a 2×2 grid of count/revenue
+/// tiles, each tappable as a status filter. The current filter gets a 2px
+/// `secondary` border; counts render in Archivo (`headlineSmall`).
 class _SummaryStrip extends StatelessWidget {
-  const _SummaryStrip({required this.summary});
+  const _SummaryStrip({
+    required this.summary,
+    required this.segment,
+    required this.onSelect,
+  });
 
   final OrdersSummary summary;
+  final QueueSegment segment;
+  final ValueChanged<QueueSegment> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    Widget tile(String label, String value) => Expanded(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Column(
         children: [
-          Text(
-            value,
-            style: text.titleLarge?.copyWith(
-              fontFeatures: const [FontFeature.tabularFigures()],
-              color: scheme.onPrimaryContainer,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _SummaryTile(
+                  label: 'New',
+                  value: '${summary.newCount}',
+                  icon: Icons.receipt_outlined,
+                  statusForTone: OrderStatus.placed,
+                  active: segment == QueueSegment.newOrders,
+                  onTap: () => onSelect(QueueSegment.newOrders),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SummaryTile(
+                  label: 'In progress',
+                  value: '${summary.inProgressCount}',
+                  icon: Icons.inventory_2_outlined,
+                  statusForTone: OrderStatus.inProgress,
+                  active: segment == QueueSegment.inProgress,
+                  onTap: () => onSelect(QueueSegment.inProgress),
+                ),
+              ),
+            ],
           ),
-          Text(
-            label,
-            style: text.labelSmall?.copyWith(color: scheme.onPrimaryContainer),
-            textAlign: TextAlign.center,
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _SummaryTile(
+                  label: 'Out for delivery',
+                  value: '${summary.outForDeliveryCount}',
+                  icon: Icons.local_shipping_outlined,
+                  statusForTone: OrderStatus.outForDelivery,
+                  active: segment == QueueSegment.outForDelivery,
+                  onTap: () => onSelect(QueueSegment.outForDelivery),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SummaryTile(
+                  label: 'Today · ${summary.todayDelivered} delivered',
+                  money: summary.todayRevenue,
+                  icon: Icons.payments_outlined,
+                  statusForTone: OrderStatus.delivered,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          tile('New', '${summary.newCount}'),
-          tile('In progress', '${summary.inProgressCount}'),
-          tile('Out', '${summary.outForDeliveryCount}'),
-          tile('Today', formatInr(summary.todayRevenue)),
-        ],
+  }
+}
+
+class _SummaryTile extends StatelessWidget {
+  const _SummaryTile({
+    required this.label,
+    required this.icon,
+    required this.statusForTone,
+    this.value,
+    this.money,
+    this.active = false,
+    this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+
+  /// Status whose tone containers colour this tile.
+  final String statusForTone;
+  final String? value;
+  final String? money;
+  final bool active;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final text = theme.textTheme;
+    final ui = OrderStatusUi.of(statusForTone);
+    final onContainer = ui.onContainer(theme);
+    return Material(
+      color: ui.container(theme),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: active
+                ? Border.all(color: scheme.secondary, width: 2)
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: onContainer),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (money != null)
+                      PriceText(money!, size: PriceSize.lg, color: onContainer)
+                    else
+                      Text(
+                        value ?? '',
+                        style: text.headlineSmall?.copyWith(color: onContainer),
+                      ),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.labelSmall?.copyWith(color: onContainer),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

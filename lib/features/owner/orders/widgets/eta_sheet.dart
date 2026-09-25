@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
+import '../../../../core/ui/format.dart';
 
 const _quickPicks = [30, 45, 60, 90, 120];
+const _defaultMinutes = 45;
 
-/// Asks for `etaMinutes` (1–1440) with quick picks and a custom field.
+/// Asks for `etaMinutes` (1-1440): quick picks or a custom time picked on
+/// the clock. The resolved absolute time is shown in words so the owner
+/// confirms what the customer will see as a countdown.
 Future<int?> showEtaSheet(BuildContext context, {required String title}) {
   return showModalBottomSheet<int>(
     context: context,
@@ -23,41 +27,43 @@ class _EtaSheet extends StatefulWidget {
 }
 
 class _EtaSheetState extends State<_EtaSheet> {
-  final _custom = TextEditingController();
-  int? _selected = 45;
-  String? _error;
+  int _minutes = _defaultMinutes;
 
-  @override
-  void dispose() {
-    _custom.dispose();
-    super.dispose();
-  }
+  DateTime get _etaAt => DateTime.now().add(Duration(minutes: _minutes));
 
-  void _submit() {
-    final custom = int.tryParse(_custom.text.trim());
-    final value = custom ?? _selected;
-    if (value == null || value < 1 || value > 1440) {
-      setState(() => _error = 'Enter 1 to 1440 minutes');
-      return;
-    }
-    Navigator.of(context).pop(value);
+  Future<void> _pickCustom() async {
+    final now = DateTime.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(now.add(Duration(minutes: _minutes))),
+    );
+    if (picked == null || !mounted) return;
+    var eta = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      picked.hour,
+      picked.minute,
+    );
+    if (!eta.isAfter(now)) eta = eta.add(const Duration(days: 1));
+    setState(() => _minutes = eta.difference(now).inMinutes.clamp(1, 1440));
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final custom = !_quickPicks.contains(_minutes);
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+          Text(widget.title, style: theme.textTheme.titleLarge),
           const SizedBox(height: 4),
-          Text(
-            'Estimated time to delivery',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text('Estimated time to delivery', style: theme.textTheme.bodyMedium),
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -66,40 +72,38 @@ class _EtaSheetState extends State<_EtaSheet> {
               for (final m in _quickPicks)
                 ChoiceChip(
                   label: Text('$m min'),
-                  selected: _selected == m && _custom.text.isEmpty,
-                  onSelected: (_) => setState(() {
-                    _selected = m;
-                    _custom.clear();
-                    _error = null;
-                  }),
+                  selected: _minutes == m,
+                  selectedColor: scheme.secondaryContainer,
+                  onSelected: (_) => setState(() => _minutes = m),
                 ),
+              ChoiceChip(
+                label: const Text('Custom'),
+                selected: custom,
+                selectedColor: scheme.secondaryContainer,
+                onSelected: (_) => _pickCustom(),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _custom,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(4),
-            ],
-            onChanged: (_) => setState(() => _error = null),
-            decoration: InputDecoration(
-              labelText: 'Custom (minutes)',
-              errorText: _error,
-              border: const OutlineInputBorder(),
-            ),
+          Text(
+            'Arrives around ${formatTime(_etaAt)}',
+            style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(64, 40)),
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Back'),
               ),
               const SizedBox(width: 8),
-              FilledButton(onPressed: _submit, child: const Text('Confirm')),
+              FilledButton(
+                style: FilledButton.styleFrom(minimumSize: const Size(64, 40)),
+                onPressed: () => Navigator.of(context).pop(_minutes),
+                child: const Text('Confirm'),
+              ),
             ],
           ),
         ],

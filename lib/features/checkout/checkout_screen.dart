@@ -331,22 +331,21 @@ class _BillBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     return Column(
       children: [
         KeyValueRow(
           label: 'Subtotal',
-          value: PriceText(cart?.subtotal ?? '0.00', style: text.bodyMedium),
+          value: PriceText(cart?.subtotal ?? '0.00', size: PriceSize.sm),
         ),
         KeyValueRow(
           label: 'Delivery',
-          value: PriceText(cart?.deliveryFee ?? '0.00', style: text.bodyMedium),
+          value: PriceText(cart?.deliveryFee ?? '0.00', size: PriceSize.sm),
         ),
         const Divider(),
         KeyValueRow(
           label: 'Total',
           emphasize: true,
-          value: PriceText(cart?.total ?? '0.00'),
+          value: PriceText(cart?.total ?? '0.00', size: PriceSize.lg),
         ),
       ],
     );
@@ -461,8 +460,7 @@ class _SummaryLine extends StatelessWidget {
                   ],
                 ),
               ),
-              if (lineTotal != null)
-                PriceText(lineTotal!, style: text.bodyMedium),
+              if (lineTotal != null) PriceText(lineTotal!, size: PriceSize.sm),
             ],
           ),
           if (warning != null)

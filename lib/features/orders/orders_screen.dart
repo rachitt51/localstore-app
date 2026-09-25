@@ -35,9 +35,9 @@ class OrdersScreen extends ConsumerWidget {
                 onRefresh: () =>
                     ref.read(ordersListProvider.notifier).refresh(),
                 child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                   itemCount: page.items.length + (page.hasMore ? 1 : 0),
-                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, i) {
                     if (i == page.items.length) {
                       return Center(
@@ -51,6 +51,7 @@ class OrdersScreen extends ConsumerWidget {
                     return OrderListTile(
                       order: page.items[i],
                       onTap: () => context.push('/orders/${page.items[i].id}'),
+                      bordered: true,
                     );
                   },
                 ),
@@ -65,7 +66,9 @@ class OrdersScreen extends ConsumerWidget {
   }
 }
 
-/// Shared by the customer list and the owner queue.
+/// Shared by the customer list and the owner queue. [bordered] draws it as a
+/// storefront card (`surface-container-lowest`, 1px `outline-variant`,
+/// `radius-md`); the owner queue keeps the plain divided-list look.
 class OrderListTile extends StatelessWidget {
   const OrderListTile({
     super.key,
@@ -73,19 +76,24 @@ class OrderListTile extends StatelessWidget {
     required this.onTap,
     this.owner = false,
     this.subtitle,
+    this.bordered = false,
   });
 
   final OrderSummary order;
   final VoidCallback onTap;
   final bool owner;
   final String? subtitle;
+  final bool bordered;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
-    return ListTile(
+    final tile = ListTile(
       onTap: onTap,
+      shape: bordered
+          ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+          : null,
       title: Row(
         children: [
           Expanded(
@@ -109,7 +117,17 @@ class OrderListTile extends StatelessWidget {
           ],
         ),
       ),
-      trailing: PriceText(order.total, style: text.titleSmall),
+      trailing: PriceText(order.total, size: PriceSize.sm),
+    );
+    if (!bordered) return tile;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: tile,
     );
   }
 }

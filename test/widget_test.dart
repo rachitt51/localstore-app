@@ -21,7 +21,7 @@ class FakeCatalogRepository implements CatalogRepository {
 
   @override
   Future<StoreInfo> store() async => StoreInfo(
-    name: 'Studio Arka Materials',
+    name: 'Wood Waves',
     phone: '+919999999999',
     address: 'Indiranagar, Bengaluru',
     isOpen: isOpen,
@@ -83,8 +83,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Studio Arka Materials'), findsOneWidget);
-    expect(find.text('Open for orders'), findsOneWidget);
+    expect(find.text('Wood Waves'), findsOneWidget);
+    expect(find.text('Open now'), findsOneWidget);
     expect(find.text('Plywood & boards'), findsOneWidget);
     expect(find.text('Hardware'), findsOneWidget);
     expect(find.byType(ProductCard), findsNWidgets(2));
@@ -112,6 +112,6 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Store closed'), findsOneWidget);
+    expect(find.text('Closed'), findsOneWidget);
   });
 }
