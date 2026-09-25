@@ -4,14 +4,14 @@ import '../core/ui/ls_theme.dart';
 
 export '../core/ui/ls_theme.dart';
 
-// LocalStore Design System (`flutter.md`): teak primary, steel secondary,
-// blue-teal success as tertiary, warm ply-paper surfaces.
+// Wood Waves brand: wood-brown primary, gold-adjacent steel secondary kept
+// for status contrast, blue-teal success as tertiary, warm cream surfaces.
 const lightScheme = ColorScheme(
   brightness: Brightness.light,
-  primary: Color(0xFF8C4A1C),
+  primary: Color(0xFF5D3A22),
   onPrimary: Color(0xFFFFFFFF),
-  primaryContainer: Color(0xFFF6DFCB),
-  onPrimaryContainer: Color(0xFF3A1D08),
+  primaryContainer: Color(0xFFE6D4B8),
+  onPrimaryContainer: Color(0xFF2C1810),
   secondary: Color(0xFF3E5C6E),
   onSecondary: Color(0xFFFFFFFF),
   secondaryContainer: Color(0xFFD6E4EC),
@@ -24,7 +24,7 @@ const lightScheme = ColorScheme(
   onError: Color(0xFFFFFFFF),
   errorContainer: Color(0xFFF9DEDC),
   onErrorContainer: Color(0xFF410E0B),
-  surface: Color(0xFFFAF7F2),
+  surface: Color(0xFFFAF6F0),
   onSurface: Color(0xFF1F1B17),
   onSurfaceVariant: Color(0xFF5A4E44),
   surfaceContainerLowest: Color(0xFFFFFFFF),
@@ -36,17 +36,17 @@ const lightScheme = ColorScheme(
   outlineVariant: Color(0xFFD5CBBF),
   inverseSurface: Color(0xFF34302B),
   onInverseSurface: Color(0xFFF7EFE7),
-  inversePrimary: Color(0xFFFFB68A),
+  inversePrimary: Color(0xFFC9A77D),
   scrim: Color(0xFF000000),
   surfaceTint: Colors.transparent,
 );
 
 const darkScheme = ColorScheme(
   brightness: Brightness.dark,
-  primary: Color(0xFFFFB68A),
-  onPrimary: Color(0xFF522300),
-  primaryContainer: Color(0xFF6E3610),
-  onPrimaryContainer: Color(0xFFFFDBC8),
+  primary: Color(0xFFC9A77D),
+  onPrimary: Color(0xFF2C1810),
+  primaryContainer: Color(0xFF4A2C1A),
+  onPrimaryContainer: Color(0xFFE6D4B8),
   secondary: Color(0xFFA7C8DA),
   onSecondary: Color(0xFF0C3444),
   secondaryContainer: Color(0xFF264B5C),
@@ -71,7 +71,7 @@ const darkScheme = ColorScheme(
   outlineVariant: Color(0xFF50453B),
   inverseSurface: Color(0xFFECE0D6),
   onInverseSurface: Color(0xFF34302B),
-  inversePrimary: Color(0xFF8C4A1C),
+  inversePrimary: Color(0xFF5D3A22),
   scrim: Color(0xFF000000),
   surfaceTint: Colors.transparent,
 );

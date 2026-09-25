@@ -116,7 +116,8 @@ const lightLs = LsColors(
   onNeutralContainer: Color(0xFF3B3632),
   ownerBar: Color(0xFF2B3338),
   onOwnerBar: Color(0xFFF1F4F6),
-  ownerAccent: Color(0xFFF2B84B),
+  // Wood Waves site gold.
+  ownerAccent: Color(0xFFC9A84C),
   onOwnerAccent: Color(0xFF2B2000),
   ply1: Color(0xFFEADFCF),
   ply2: Color(0xFFDCCBB3),
@@ -136,7 +137,7 @@ const darkLs = LsColors(
   onNeutralContainer: Color(0xFFE6DED6),
   ownerBar: Color(0xFF242C31),
   onOwnerBar: Color(0xFFE3E9EC),
-  ownerAccent: Color(0xFFF2B84B),
+  ownerAccent: Color(0xFFC9A84C),
   onOwnerAccent: Color(0xFF2B2000),
   ply1: Color(0xFF2A241E),
   ply2: Color(0xFF352D25),
@@ -152,8 +153,10 @@ LsColors lsColorsOf(ThemeData theme) =>
 const _tnum = [FontFeature.tabularFigures()];
 
 TextTheme lsText(Color ink) {
-  final display = GoogleFonts.archivo;
-  final sans = GoogleFonts.ibmPlexSans;
+  // Wood Waves brand type: Playfair Display for display type, Plus Jakarta
+  // Sans for body and labels. Prices keep IBM Plex Sans (see lsPrice below).
+  final display = GoogleFonts.playfairDisplay;
+  final sans = GoogleFonts.plusJakartaSans;
   return TextTheme(
     headlineSmall: display(
       fontSize: 24,
