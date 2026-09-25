@@ -16,26 +16,26 @@ class OrderStatusHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = OrderStatusUi.of(order.status);
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final text = theme.textTheme;
     final showEta =
         order.status == OrderStatus.outForDelivery && order.etaAt != null;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      color: ui.container(scheme),
+      color: ui.container(theme),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(ui.icon, color: ui.onContainer(scheme)),
+              Icon(ui.icon, color: ui.onContainer(theme)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   ui.label(owner: owner),
                   style: text.titleLarge?.copyWith(
-                    color: ui.onContainer(scheme),
+                    color: ui.onContainer(theme),
                   ),
                 ),
               ),
@@ -46,7 +46,7 @@ class OrderStatusHeader extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: EtaCountdown(
                 etaAt: order.etaAt!,
-                style: text.bodyLarge?.copyWith(color: ui.onContainer(scheme)),
+                style: text.bodyLarge?.copyWith(color: ui.onContainer(theme)),
               ),
             ),
           if (!ui.isTerminal && !showEta)
@@ -54,7 +54,7 @@ class OrderStatusHeader extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 'Updated ${formatTime(order.updatedAt)}',
-                style: text.bodySmall?.copyWith(color: ui.onContainer(scheme)),
+                style: text.bodySmall?.copyWith(color: ui.onContainer(theme)),
               ),
             ),
         ],

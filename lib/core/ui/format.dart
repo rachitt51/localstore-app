@@ -1,14 +1,15 @@
 import 'package:intl/intl.dart';
 
 /// Formats an API money string (`"1234567.50"`) as `₹12,34,567.50` with
-/// Indian digit grouping. The string is never parsed to a number: the digits
-/// are regrouped as text so the value shown is exactly what the API sent.
+/// Indian digit grouping and a true minus (U+2212) for deductions. The
+/// string is never parsed to a number: the digits are regrouped as text so
+/// the value shown is exactly what the API sent.
 String formatInr(String amount) {
   var s = amount.trim();
   if (s.isEmpty) return '₹0';
   var sign = '';
   if (s.startsWith('-')) {
-    sign = '-';
+    sign = '−';
     s = s.substring(1);
   }
   final dot = s.indexOf('.');

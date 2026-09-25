@@ -18,7 +18,7 @@ void main() {
     });
 
     test('negative amounts and odd input do not crash', () {
-      expect(formatInr('-1250.00'), '-₹1,250.00');
+      expect(formatInr('-1250.00'), '−₹1,250.00');
       expect(formatInr(''), '₹0');
       expect(formatInr('abc'), '₹abc');
     });

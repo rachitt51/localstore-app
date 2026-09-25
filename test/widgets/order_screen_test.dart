@@ -177,7 +177,7 @@ void main() {
     // Socket drops → the indicator says so.
     realtime.socket.emitDisconnect();
     await tester.pump();
-    expect(find.text('Reconnecting'), findsOneWidget);
+    expect(find.text('Reconnecting…'), findsOneWidget);
 
     await _unmount(tester);
     realtime.service.dispose();

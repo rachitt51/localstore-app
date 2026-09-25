@@ -23,7 +23,7 @@ void main() {
     expect(find.text('BWP Plywood 18 mm'), findsOneWidget);
     expect(find.textContaining('₹2,450.00'), findsOneWidget);
     expect(find.textContaining('/ sheet'), findsOneWidget);
-    expect(find.text('12 in stock'), findsOneWidget);
+    expect(find.text('12 sheets in stock'), findsOneWidget);
     expect(find.text('Out of stock'), findsNothing);
     // No imageUrl → placeholder, no network image.
     expect(find.byType(ImagePlaceholder), findsOneWidget);

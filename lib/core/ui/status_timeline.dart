@@ -5,7 +5,9 @@ import 'format.dart';
 import 'order_status.dart';
 
 /// Vertical list of the order's `timeline[]`, rendered verbatim with the
-/// status vocabulary. Newest last.
+/// status vocabulary. Newest last: done steps are `primary-container` nodes
+/// on a `primary` rail, the current step a filled node in its tone with a
+/// halo.
 class StatusTimeline extends StatelessWidget {
   const StatusTimeline({super.key, required this.events, this.owner = false});
 
@@ -14,7 +16,6 @@ class StatusTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     if (events.isEmpty) {
       return Text('No updates yet', style: text.bodyMedium);
@@ -27,8 +28,6 @@ class StatusTimeline extends StatelessWidget {
             event: events[i],
             owner: owner,
             isLast: i == events.length - 1,
-            scheme: scheme,
-            text: text,
           ),
       ],
     );
@@ -40,20 +39,41 @@ class _TimelineRow extends StatelessWidget {
     required this.event,
     required this.owner,
     required this.isLast,
-    required this.scheme,
-    required this.text,
   });
 
   final OrderEvent event;
   final bool owner;
   final bool isLast;
-  final ColorScheme scheme;
-  final TextTheme text;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final text = theme.textTheme;
     final ui = OrderStatusUi.of(event.status);
-    final color = isLast ? ui.color(scheme) : scheme.outline;
+    final node = isLast
+        ? Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: ui.container(theme),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: ui.color(theme).withValues(alpha: 0.35),
+                width: 3,
+              ),
+            ),
+            child: Icon(ui.icon, size: 13, color: ui.onContainer(theme)),
+          )
+        : Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(ui.icon, size: 13, color: scheme.onPrimaryContainer),
+          );
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -62,13 +82,13 @@ class _TimelineRow extends StatelessWidget {
             width: 28,
             child: Column(
               children: [
-                Icon(ui.icon, size: 20, color: color),
+                node,
                 if (!isLast)
                   Expanded(
                     child: Container(
                       width: 2,
                       margin: const EdgeInsets.symmetric(vertical: 2),
-                      color: scheme.outlineVariant,
+                      color: scheme.primary,
                     ),
                   ),
               ],
@@ -84,7 +104,7 @@ class _TimelineRow extends StatelessWidget {
                   Text(
                     ui.label(owner: owner),
                     style: text.titleSmall?.copyWith(
-                      color: isLast ? ui.color(scheme) : null,
+                      color: isLast ? ui.color(theme) : null,
                     ),
                   ),
                   Text(

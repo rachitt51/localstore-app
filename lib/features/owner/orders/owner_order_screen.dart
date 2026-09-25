@@ -156,7 +156,7 @@ class _TransitionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     final ui = OrderStatusUi.of(transition.to);
     final label = transitionLabel(from: order.status, to: transition.to);
     final destructive =
@@ -165,8 +165,8 @@ class _TransitionButton extends StatelessWidget {
       onPressed: enabled ? onPressed : null,
       style: destructive
           ? FilledButton.styleFrom(
-              backgroundColor: ui.container(scheme),
-              foregroundColor: ui.onContainer(scheme),
+              backgroundColor: ui.container(theme),
+              foregroundColor: ui.onContainer(theme),
             )
           : null,
       icon: Icon(ui.icon, size: 18),

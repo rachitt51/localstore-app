@@ -40,15 +40,14 @@ void main() {
 
     test('colours resolve for both brightnesses', () {
       for (final brightness in Brightness.values) {
-        final scheme = ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          brightness: brightness,
-        );
+        // A plain theme without the LsColors extension must also resolve
+        // (widget tests pump default themes).
+        final theme = ThemeData(brightness: brightness);
         for (final status in OrderStatus.all) {
           final ui = OrderStatusUi.of(status);
-          expect(ui.color(scheme), isA<Color>());
-          expect(ui.container(scheme), isA<Color>());
-          expect(ui.onContainer(scheme), isA<Color>());
+          expect(ui.color(theme), isA<Color>());
+          expect(ui.container(theme), isA<Color>());
+          expect(ui.onContainer(theme), isA<Color>());
         }
       }
     });

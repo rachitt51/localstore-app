@@ -1,33 +1,45 @@
 import 'package:flutter/material.dart';
 
-/// Titled block used on detail screens.
+/// Titled block used on detail screens (SectionHeader: `space-6` above,
+/// `space-2` below, optional count and text action).
 class Section extends StatelessWidget {
   const Section({
     super.key,
     required this.title,
     required this.child,
+    this.count,
     this.trailing,
   });
 
   final String title;
   final Widget child;
+
+  /// Muted count shown after the title.
+  final int? count;
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
+              Text(title, style: text.titleMedium),
+              if (count != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: Text(
+                    '$count',
+                    style: text.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
-              ),
+              const Spacer(),
               ?trailing,
             ],
           ),
