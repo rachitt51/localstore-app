@@ -85,7 +85,7 @@ class SkeletonGrid extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        childAspectRatio: 0.72,
+        childAspectRatio: 0.6,
       ),
       itemCount: count,
       itemBuilder: (_, _) => const Skeleton(height: 200, radius: 8),
