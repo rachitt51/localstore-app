@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/session.dart';
 import '../../core/models/product.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../../core/ui/empty_state.dart';
 import '../../core/ui/error_state.dart';
 import '../../core/ui/product_card.dart';
@@ -70,25 +71,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           0;
       await ref.read(cartProvider.notifier).add(variant.id, 1);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            duration: const Duration(seconds: 3),
-            content: const Text('Added to cart'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () => ref
-                  .read(cartProvider.notifier)
-                  .setQty(variant.id, previousQty),
-            ),
-          ),
-        );
+      showAppSnackBar(
+        context,
+        content: const Text('Added to cart'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () =>
+              ref.read(cartProvider.notifier).setQty(variant.id, previousQty),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(errorMessage(e))));
+      showAppSnackBar(context, content: Text(errorMessage(e)));
     }
   }
 
@@ -98,10 +92,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final products = ref.watch(productListProvider(query));
     final categories = ref.watch(categoriesProvider);
     final store = ref.watch(storeProvider);
+    final cart = ref.watch(cartProvider).value;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(store.value?.name ?? 'LocalStore'),
+        title: Semantics(
+          label: store.value?.name ?? 'Wood Waves',
+          child: ExcludeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset('assets/brand/logo.png', height: 32),
+                const SizedBox(width: 8),
+                Text(store.value?.name ?? 'Wood Waves'),
+              ],
+            ),
+          ),
+        ),
         actions: const [CartAction(), AccountMenuButton()],
       ),
       body: RefreshIndicator(
@@ -125,6 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
+            const SliverToBoxAdapter(child: _VisitCta()),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -215,10 +223,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                       delegate: SliverChildBuilderDelegate((context, i) {
                         final ProductSummary p = page.items[i];
+                        final cartQty =
+                            cart?.items
+                                .where((l) => l.productId == p.id)
+                                .fold(0, (sum, l) => sum + l.qty) ??
+                            0;
                         return ProductCard(
                           product: p,
                           onTap: () => context.push('/products/${p.id}'),
                           onQuickAdd: p.inStock ? () => _quickAdd(p) : null,
+                          cartQty: cartQty,
                         );
                       }, childCount: page.items.length),
                     ),
@@ -253,6 +267,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Home CTA under the store banner: books a free home visit (`/visit`).
+class _VisitCta extends StatelessWidget {
+  const _VisitCta();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Material(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => context.push('/visit'),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.event_available_outlined,
+                  color: scheme.onPrimaryContainer,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Book a free home visit',
+                        style: text.titleSmall?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                        ),
+                      ),
+                      Text(
+                        'Free consultation, no obligation.',
+                        style: text.bodySmall?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: scheme.onPrimaryContainer),
+              ],
+            ),
+          ),
         ),
       ),
     );

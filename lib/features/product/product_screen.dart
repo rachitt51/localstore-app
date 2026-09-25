@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/session.dart';
 import '../../core/models/product.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../../core/ui/back_or_home_button.dart';
 import '../../core/ui/error_state.dart';
 import '../../core/ui/format.dart';
@@ -61,20 +62,16 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     try {
       await ref.read(cartProvider.notifier).add(variant.id, _qty);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            // Short: the timer restarts on route transitions, so a long one
-            // follows the user through the checkout funnel.
-            duration: const Duration(seconds: 2),
-            content: Text('Added $_qty to cart'),
-            action: SnackBarAction(
-              label: 'View cart',
-              onPressed: () => context.push('/cart'),
-            ),
-          ),
-        );
+      // Short: the timer restarts on route transitions, so a long one
+      // follows the user through the checkout funnel.
+      showAppSnackBar(
+        context,
+        content: Text('Added $_qty to cart'),
+        action: SnackBarAction(
+          label: 'View cart',
+          onPressed: () => context.push('/cart'),
+        ),
+      );
     } catch (e) {
       setState(() => _error = errorMessage(e));
     } finally {

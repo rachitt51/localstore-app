@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/models/product.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../../../core/ui/back_or_home_button.dart';
 import '../../../core/ui/error_state.dart';
 import '../../../core/ui/image_placeholder.dart';
@@ -228,8 +229,9 @@ class _ProductFormState extends ConsumerState<_ProductForm> {
       }
       ref.invalidate(ownerProductListProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(existing == null ? 'Product added' : 'Saved')),
+      showAppSnackBar(
+        context,
+        content: Text(existing == null ? 'Product added' : 'Saved'),
       );
       if (context.canPop()) {
         context.pop();

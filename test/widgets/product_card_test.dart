@@ -6,9 +6,11 @@ import 'package:localstore_app/core/ui/product_card.dart';
 
 import '../fixtures.dart';
 
+// Tall enough that the quick-add button's cart-quantity Badge (see
+// product_card.dart) never overflows the card's info column.
 Widget _wrap(Widget child) => MaterialApp(
   home: Scaffold(
-    body: Center(child: SizedBox(width: 200, height: 300, child: child)),
+    body: Center(child: SizedBox(width: 200, height: 320, child: child)),
   ),
 );
 
@@ -30,6 +32,30 @@ void main() {
 
     await tester.tap(find.byType(ProductCard));
     expect(tapped, isTrue);
+  });
+
+  testWidgets('shows a cart-quantity badge on the quick-add button', (
+    tester,
+  ) async {
+    final product = ProductSummary.fromJson(productJson());
+    await tester.pumpWidget(
+      _wrap(ProductCard(product: product, onQuickAdd: () {}, cartQty: 3)),
+    );
+
+    expect(find.text('3'), findsOneWidget);
+  });
+
+  testWidgets('no badge when nothing of this product is in the cart', (
+    tester,
+  ) async {
+    final product = ProductSummary.fromJson(productJson());
+    await tester.pumpWidget(
+      _wrap(ProductCard(product: product, onQuickAdd: () {})),
+    );
+
+    expect(find.byType(Badge), findsOneWidget);
+    final badge = tester.widget<Badge>(find.byType(Badge));
+    expect(badge.isLabelVisible, isFalse);
   });
 
   testWidgets('shows the out-of-stock badge', (tester) async {
