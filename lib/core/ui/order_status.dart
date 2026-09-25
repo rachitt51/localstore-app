@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/order.dart';
+import 'ls_theme.dart';
 
 enum StatusTone { neutral, primary, warning, success, error }
 
@@ -27,42 +28,42 @@ class OrderStatusUi {
       customerLabel: 'Awaiting payment',
       ownerLabel: 'Awaiting payment',
       tone: StatusTone.neutral,
-      icon: Icons.hourglass_top,
+      icon: Icons.hourglass_empty,
     ),
     OrderStatus.placed: OrderStatusUi._(
       status: OrderStatus.placed,
       customerLabel: 'Order placed',
       ownerLabel: 'New',
       tone: StatusTone.primary,
-      icon: Icons.receipt_long,
+      icon: Icons.receipt_outlined,
     ),
     OrderStatus.inProgress: OrderStatusUi._(
       status: OrderStatus.inProgress,
       customerLabel: 'Being prepared',
       ownerLabel: 'In progress',
       tone: StatusTone.primary,
-      icon: Icons.inventory_2,
+      icon: Icons.inventory_2_outlined,
     ),
     OrderStatus.outForDelivery: OrderStatusUi._(
       status: OrderStatus.outForDelivery,
       customerLabel: 'On the way',
       ownerLabel: 'Out for delivery',
       tone: StatusTone.primary,
-      icon: Icons.local_shipping,
+      icon: Icons.local_shipping_outlined,
     ),
     OrderStatus.delivered: OrderStatusUi._(
       status: OrderStatus.delivered,
       customerLabel: 'Delivered',
       ownerLabel: 'Delivered',
       tone: StatusTone.success,
-      icon: Icons.check_circle,
+      icon: Icons.check_circle_outline,
     ),
     OrderStatus.deliveryFailed: OrderStatusUi._(
       status: OrderStatus.deliveryFailed,
       customerLabel: 'Delivery attempt failed',
       ownerLabel: 'Delivery failed',
       tone: StatusTone.warning,
-      icon: Icons.report_problem,
+      icon: Icons.warning_amber_outlined,
     ),
     OrderStatus.rejected: OrderStatusUi._(
       status: OrderStatus.rejected,
@@ -76,14 +77,14 @@ class OrderStatusUi {
       customerLabel: 'Cancelled',
       ownerLabel: 'Cancelled',
       tone: StatusTone.error,
-      icon: Icons.cancel,
+      icon: Icons.cancel_outlined,
     ),
     OrderStatus.refunded: OrderStatusUi._(
       status: OrderStatus.refunded,
       customerLabel: 'Refunded',
       ownerLabel: 'Refunded',
       tone: StatusTone.neutral,
-      icon: Icons.currency_rupee,
+      icon: Icons.undo,
     ),
   };
 
@@ -105,30 +106,42 @@ class OrderStatusUi {
   bool get isTerminal => OrderStatus.isTerminal(status);
 
   /// Foreground colour for the tone.
-  Color color(ColorScheme scheme) => switch (tone) {
-    StatusTone.neutral => scheme.onSurfaceVariant,
-    StatusTone.primary => scheme.primary,
-    StatusTone.warning => scheme.tertiary,
-    StatusTone.success => scheme.primary,
-    StatusTone.error => scheme.error,
-  };
+  Color color(ThemeData theme) {
+    final scheme = theme.colorScheme;
+    final ls = lsColorsOf(theme);
+    return switch (tone) {
+      StatusTone.neutral => scheme.onSurfaceVariant,
+      StatusTone.primary => scheme.primary,
+      StatusTone.warning => ls.warning,
+      StatusTone.success => ls.success,
+      StatusTone.error => scheme.error,
+    };
+  }
 
   /// Container colour for chips and headers.
-  Color container(ColorScheme scheme) => switch (tone) {
-    StatusTone.neutral => scheme.surfaceContainerHighest,
-    StatusTone.primary => scheme.primaryContainer,
-    StatusTone.warning => scheme.tertiaryContainer,
-    StatusTone.success => scheme.primaryContainer,
-    StatusTone.error => scheme.errorContainer,
-  };
+  Color container(ThemeData theme) {
+    final scheme = theme.colorScheme;
+    final ls = lsColorsOf(theme);
+    return switch (tone) {
+      StatusTone.neutral => ls.neutralContainer,
+      StatusTone.primary => scheme.primaryContainer,
+      StatusTone.warning => ls.warningContainer,
+      StatusTone.success => ls.successContainer,
+      StatusTone.error => scheme.errorContainer,
+    };
+  }
 
-  Color onContainer(ColorScheme scheme) => switch (tone) {
-    StatusTone.neutral => scheme.onSurfaceVariant,
-    StatusTone.primary => scheme.onPrimaryContainer,
-    StatusTone.warning => scheme.onTertiaryContainer,
-    StatusTone.success => scheme.onPrimaryContainer,
-    StatusTone.error => scheme.onErrorContainer,
-  };
+  Color onContainer(ThemeData theme) {
+    final scheme = theme.colorScheme;
+    final ls = lsColorsOf(theme);
+    return switch (tone) {
+      StatusTone.neutral => ls.onNeutralContainer,
+      StatusTone.primary => scheme.onPrimaryContainer,
+      StatusTone.warning => ls.onWarningContainer,
+      StatusTone.success => ls.onSuccessContainer,
+      StatusTone.error => scheme.onErrorContainer,
+    };
+  }
 
   static String _humanize(String raw) {
     if (raw.isEmpty) return 'Unknown';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// A pulsing grey block. Compose into list/grid loaders.
+/// Loading placeholder: `surface-container-high` with a
+/// `surface-container-highest` shimmer; static under reduced motion.
 class Skeleton extends StatefulWidget {
   const Skeleton({super.key, this.width, this.height = 16, this.radius = 6});
 
@@ -16,8 +17,8 @@ class _SkeletonState extends State<Skeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat(reverse: true);
+    duration: const Duration(milliseconds: 1200),
+  );
 
   @override
   void dispose() {
@@ -28,13 +29,23 @@ class _SkeletonState extends State<Skeleton>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return FadeTransition(
-      opacity: Tween(begin: 0.4, end: 0.9).animate(_controller),
-      child: Container(
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (reduceMotion) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
+          color: Color.lerp(
+            scheme.surfaceContainerHigh,
+            scheme.surfaceContainerHighest,
+            reduceMotion ? 0 : _controller.value,
+          ),
           borderRadius: BorderRadius.circular(widget.radius),
         ),
       ),
@@ -42,7 +53,7 @@ class _SkeletonState extends State<Skeleton>
   }
 }
 
-/// A list of card-shaped skeleton rows.
+/// A list of row-shaped skeletons.
 class SkeletonList extends StatelessWidget {
   const SkeletonList({super.key, this.rows = 6, this.rowHeight = 72});
 
@@ -55,7 +66,7 @@ class SkeletonList extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemCount: rows,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, _) => Skeleton(height: rowHeight, radius: 12),
+      itemBuilder: (_, _) => Skeleton(height: rowHeight, radius: 8),
     );
   }
 }
@@ -72,12 +83,12 @@ class SkeletonGrid extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
         childAspectRatio: 0.72,
       ),
       itemCount: count,
-      itemBuilder: (_, _) => const Skeleton(height: 200, radius: 12),
+      itemBuilder: (_, _) => const Skeleton(height: 200, radius: 8),
     );
   }
 }

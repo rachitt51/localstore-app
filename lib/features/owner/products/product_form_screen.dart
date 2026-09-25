@@ -289,7 +289,7 @@ class _ProductFormState extends ConsumerState<_ProductForm> {
               loading: () => const LinearProgressIndicator(),
               error: (e, _) => Text(
                 'Categories: ${errorMessage(e)}',
-                style: TextStyle(color: scheme.error),
+                style: text.bodySmall?.copyWith(color: scheme.error),
               ),
             ),
             const SizedBox(height: 12),
@@ -389,11 +389,6 @@ class _ProductFormState extends ConsumerState<_ProductForm> {
                   height: 96,
                   child: OutlinedButton(
                     onPressed: _uploading ? null : _addImage,
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
                     child: _uploading
                         ? const SizedBox(
                             width: 20,
@@ -538,7 +533,10 @@ class _VariantCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Column(
                   children: [
-                    const Text('Active', style: TextStyle(fontSize: 11)),
+                    Text(
+                      'Active',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
                     Switch(value: row.isActive, onChanged: onActiveChanged),
                   ],
                 ),

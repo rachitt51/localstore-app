@@ -6,6 +6,7 @@ import '../../../core/models/order.dart';
 import '../../../core/ui/back_or_home_button.dart';
 import '../../../core/ui/error_state.dart';
 import '../../../core/ui/live_indicator.dart';
+import '../../../core/ui/ls_theme.dart';
 import '../../../core/ui/order_status.dart';
 import '../../../core/ui/section.dart';
 import '../../../core/ui/skeleton.dart';
@@ -66,7 +67,8 @@ class _OwnerOrderScreenState extends ConsumerState<OwnerOrderScreen> {
   @override
   Widget build(BuildContext context) {
     final order = ref.watch(ownerOrderProvider(widget.orderId));
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Scaffold(
       appBar: AppBar(
         leading: const BackOrHomeButton(fallback: '/owner'),
@@ -98,31 +100,40 @@ class _OwnerOrderScreenState extends ConsumerState<OwnerOrderScreen> {
                 ),
               ),
             ),
-            if (o.allowedTransitions.isNotEmpty)
+            if (o.allowedTransitions.isNotEmpty || o.isTerminal)
               Material(
                 elevation: 8,
                 color: scheme.surface,
                 child: SafeArea(
                   top: false,
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final t in o.allowedTransitions)
-                              _TransitionButton(
+                        if (o.allowedTransitions.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'No further actions',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        else
+                          for (final t in _ordered(o.allowedTransitions))
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _TransitionButton(
                                 order: o,
                                 transition: t,
                                 enabled: !_busy,
                                 onPressed: () => _run(o, t),
                               ),
-                          ],
-                        ),
+                            ),
                         InlineError(_error),
                       ],
                     ),
@@ -139,8 +150,29 @@ class _OwnerOrderScreenState extends ConsumerState<OwnerOrderScreen> {
       ),
     );
   }
+
+  /// The forward (primary/success-tone) transition first, then the
+  /// destructive ones — TransitionActions: "the forward action is always
+  /// the filled one and always first".
+  List<AllowedTransition> _ordered(List<AllowedTransition> transitions) {
+    bool destructive(AllowedTransition t) {
+      final tone = OrderStatusUi.of(t.to).tone;
+      return tone == StatusTone.error || tone == StatusTone.warning;
+    }
+
+    final sorted = [...transitions];
+    sorted.sort((a, b) {
+      final da = destructive(a) ? 1 : 0;
+      final db = destructive(b) ? 1 : 0;
+      return da.compareTo(db);
+    });
+    return sorted;
+  }
 }
 
+/// One TransitionActions button, dense (40dp) for owner mode: the forward
+/// action is filled, Reject/Cancel is a `danger` outlined button, Delivery
+/// failed is a `warning` outlined button.
 class _TransitionButton extends StatelessWidget {
   const _TransitionButton({
     required this.order,
@@ -154,23 +186,42 @@ class _TransitionButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
 
+  static const _dense = Size(64, 40);
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final ls = lsColorsOf(theme);
     final ui = OrderStatusUi.of(transition.to);
     final label = transitionLabel(from: order.status, to: transition.to);
-    final destructive =
-        ui.tone == StatusTone.error || ui.tone == StatusTone.warning;
-    return FilledButton.icon(
-      onPressed: enabled ? onPressed : null,
-      style: destructive
-          ? FilledButton.styleFrom(
-              backgroundColor: ui.container(scheme),
-              foregroundColor: ui.onContainer(scheme),
-            )
-          : null,
-      icon: Icon(ui.icon, size: 18),
-      label: Text(label),
-    );
+    final icon = Icon(ui.icon, size: 18);
+    return switch (ui.tone) {
+      StatusTone.error => OutlinedButton.icon(
+        onPressed: enabled ? onPressed : null,
+        style: OutlinedButton.styleFrom(
+          minimumSize: _dense,
+          foregroundColor: theme.colorScheme.error,
+          side: BorderSide(color: theme.colorScheme.error),
+        ),
+        icon: icon,
+        label: Text(label),
+      ),
+      StatusTone.warning => OutlinedButton.icon(
+        onPressed: enabled ? onPressed : null,
+        style: OutlinedButton.styleFrom(
+          minimumSize: _dense,
+          foregroundColor: ls.warning,
+          side: BorderSide(color: ls.warning),
+        ),
+        icon: icon,
+        label: Text(label),
+      ),
+      _ => FilledButton.icon(
+        onPressed: enabled ? onPressed : null,
+        style: FilledButton.styleFrom(minimumSize: _dense),
+        icon: icon,
+        label: Text(label),
+      ),
+    };
   }
 }

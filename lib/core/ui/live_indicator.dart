@@ -2,20 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../realtime/realtime.dart';
+import 'ls_theme.dart';
 
-/// Tiny dot + label for the app bar: "Live" while the realtime socket is up,
-/// "Reconnecting" while one is wanted but down, nothing when signed out.
-class LiveIndicator extends ConsumerWidget {
+/// Dot + label for the app bar: "Live" with a pulsing `success` dot while
+/// the realtime socket is up, "Reconnecting…" with a hollow neutral dot
+/// while one is wanted but down, nothing when signed out.
+class LiveIndicator extends ConsumerStatefulWidget {
   const LiveIndicator({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LiveIndicator> createState() => _LiveIndicatorState();
+}
+
+class _LiveIndicatorState extends ConsumerState<LiveIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final status = ref.watch(realtimeStatusProvider);
     if (status == RealtimeStatus.off) return const SizedBox.shrink();
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final ls = lsColorsOf(theme);
     final live = status == RealtimeStatus.connected;
-    final color = live ? Colors.green.shade600 : scheme.outline;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (live && !reduceMotion) {
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
+    } else {
+      _pulse.stop();
+    }
+    final color = live ? ls.success : theme.colorScheme.onSurfaceVariant;
     return Padding(
       padding: const EdgeInsets.only(right: 16),
       child: Semantics(
@@ -23,15 +48,30 @@ class LiveIndicator extends ConsumerWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
+            live
+                ? FadeTransition(
+                    opacity: _pulse.drive(Tween(begin: 1.0, end: 0.35)),
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  )
+                : Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: color, width: 1.5),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
             const SizedBox(width: 6),
             Text(
-              live ? 'Live' : 'Reconnecting',
-              style: text.labelSmall?.copyWith(color: color),
+              live ? 'Live' : 'Reconnecting…',
+              style: theme.textTheme.labelMedium?.copyWith(color: color),
             ),
           ],
         ),

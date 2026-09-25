@@ -61,6 +61,7 @@ class _ReasonSheetState extends State<_ReasonSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottom),
       child: Column(
@@ -90,7 +91,13 @@ class _ReasonSheetState extends State<_ReasonSheet> {
                 child: const Text('Back'),
               ),
               const SizedBox(width: 8),
+              // The only place `danger-filled` appears: this always confirms
+              // a negative action (Reject, Cancel, Mark failed…).
               FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: scheme.error,
+                  foregroundColor: scheme.onError,
+                ),
                 onPressed: _submit,
                 child: Text(widget.confirmLabel),
               ),

@@ -7,8 +7,8 @@ import '../../core/models/cart.dart';
 import '../../core/ui/back_or_home_button.dart';
 import '../../core/ui/empty_state.dart';
 import '../../core/ui/error_state.dart';
-import '../../core/ui/format.dart';
 import '../../core/ui/image_placeholder.dart';
+import '../../core/ui/ls_theme.dart';
 import '../../core/ui/price_text.dart';
 import '../../core/ui/qty_stepper.dart';
 import '../../core/ui/section.dart';
@@ -75,6 +75,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
   Widget _body(Cart cart, {required bool storeOpen}) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
+    final ls = lsColorsOf(Theme.of(context));
     return Column(
       children: [
         Expanded(
@@ -88,14 +89,14 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: scheme.errorContainer,
-                      borderRadius: BorderRadius.circular(12),
+                      color: ls.neutralContainer,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'The store is closed right now. You can keep your cart '
-                      'and check out when it opens.',
+                      'The store is closed right now. Your cart is kept; '
+                      'check out when it opens.',
                       style: text.bodyMedium?.copyWith(
-                        color: scheme.onErrorContainer,
+                        color: ls.onNeutralContainer,
                       ),
                     ),
                   ),
@@ -117,20 +118,17 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                     children: [
                       KeyValueRow(
                         label: 'Subtotal',
-                        value: PriceText(cart.subtotal, style: text.bodyMedium),
+                        value: PriceText(cart.subtotal, size: PriceSize.sm),
                       ),
                       KeyValueRow(
                         label: 'Delivery',
-                        value: PriceText(
-                          cart.deliveryFee,
-                          style: text.bodyMedium,
-                        ),
+                        value: PriceText(cart.deliveryFee, size: PriceSize.sm),
                       ),
                       const Divider(),
                       KeyValueRow(
                         label: 'Total',
                         emphasize: true,
-                        value: PriceText(cart.total, style: text.titleMedium),
+                        value: PriceText(cart.total, size: PriceSize.lg),
                       ),
                     ],
                   ),
@@ -197,8 +195,8 @@ class _CartLineTile extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
-                  width: 64,
-                  height: 64,
+                  width: 56,
+                  height: 56,
                   child: ProductImage(url: line.imageUrl, iconSize: 24),
                 ),
               ),
@@ -216,11 +214,10 @@ class _CartLineTile extends StatelessWidget {
                     if (line.variantName != null &&
                         line.variantName!.isNotEmpty)
                       Text(line.variantName!, style: text.bodySmall),
-                    Text(
-                      '${formatInr(line.unitPrice)} / ${line.unit}',
-                      style: text.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    PriceText(
+                      line.unitPrice,
+                      size: PriceSize.sm,
+                      unit: line.unit,
                     ),
                     const SizedBox(height: 8),
                     Row(

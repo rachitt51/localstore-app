@@ -12,6 +12,7 @@ import '../../core/ui/image_placeholder.dart';
 import '../../core/ui/price_text.dart';
 import '../../core/ui/qty_stepper.dart';
 import '../../core/ui/skeleton.dart';
+import '../../core/ui/stock_label.dart';
 import '../account/account_menu.dart';
 import '../cart/cart_notifier.dart';
 import '../cart/widgets/cart_action.dart';
@@ -143,25 +144,18 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(product.category.name, style: text.labelMedium),
+                    Text(
+                      product.category.name.toUpperCase(),
+                      style: text.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(product.name, style: text.headlineSmall),
                     const SizedBox(height: 8),
-                    PriceText(
-                      price,
-                      style: text.titleLarge,
-                      unit: product.unit,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      inStock
-                          ? '$stock ${product.unit} in stock'
-                          : 'Out of stock',
-                      style: text.bodyMedium?.copyWith(
-                        color: inStock ? scheme.onSurfaceVariant : scheme.error,
-                        fontWeight: inStock ? null : FontWeight.w600,
-                      ),
-                    ),
+                    PriceText(price, size: PriceSize.xl, unit: product.unit),
+                    const SizedBox(height: 6),
+                    StockLabel(qty: inStock ? stock : 0, unit: product.unit),
                     if (product.autoApprove)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -181,14 +175,14 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                         runSpacing: 8,
                         children: [
                           for (final v in variants)
-                            ChoiceChip(
-                              label: Text(
-                                v.inStock
-                                    ? '${v.name} · ${formatInr(v.price)}'
-                                    : '${v.name} · out of stock',
-                              ),
+                            _VariantChip(
+                              label: v.name,
+                              sub: v.inStock
+                                  ? '${formatInr(v.price)} / ${product.unit}'
+                                  : 'Out of stock',
                               selected: v.id == variant?.id,
-                              onSelected: (_) => setState(() {
+                              disabled: !v.inStock,
+                              onTap: () => setState(() {
                                 _variantId = v.id;
                                 _qty = 1;
                                 _error = null;
@@ -238,21 +232,21 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: OutlinedButton(
+                          onPressed: inStock && !_busy && variant != null
+                              ? () => _buyNow(product, variant)
+                              : null,
+                          child: const Text('Buy now'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton.icon(
                           onPressed: inStock && !_busy && variant != null
                               ? () => _addToCart(variant)
                               : null,
                           icon: const Icon(Icons.add_shopping_cart),
                           label: const Text('Add to cart'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: inStock && !_busy && variant != null
-                              ? () => _buyNow(product, variant)
-                              : null,
-                          child: const Text('Buy now'),
                         ),
                       ),
                     ],
@@ -322,6 +316,86 @@ class _ImageCarouselState extends State<_ImageCarousel> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Variant picker chip: size/finish with its own price and stock.
+/// Selected: 2px `primary` border + `primary-container` + check. Out of
+/// stock: struck label, muted border, still visible so buyers know the size
+/// exists (still tappable, so its price and stock can be checked).
+class _VariantChip extends StatelessWidget {
+  const _VariantChip({
+    required this.label,
+    required this.sub,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final String sub;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? scheme.primaryContainer
+              : scheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selected
+                ? scheme.primary
+                : disabled
+                ? scheme.outlineVariant
+                : scheme.outline,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              Icon(Icons.check, size: 16, color: scheme.onPrimaryContainer),
+              const SizedBox(width: 4),
+            ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: text.labelMedium?.copyWith(
+                    color: selected
+                        ? scheme.onPrimaryContainer
+                        : disabled
+                        ? scheme.onSurfaceVariant
+                        : scheme.onSurface,
+                    decoration: disabled ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                Text(
+                  sub,
+                  style: text.bodySmall?.copyWith(
+                    color: selected
+                        ? scheme.onPrimaryContainer
+                        : scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

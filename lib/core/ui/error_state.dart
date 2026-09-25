@@ -21,10 +21,18 @@ class ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              network ? Icons.wifi_off : Icons.error_outline,
-              size: 56,
-              color: scheme.error,
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: scheme.errorContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                network ? Icons.wifi_off : Icons.error_outline,
+                size: 28,
+                color: scheme.onErrorContainer,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -40,10 +48,10 @@ class ErrorState extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),
-              FilledButton.tonalIcon(
+              OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: const Text('Try again'),
               ),
             ],
           ],

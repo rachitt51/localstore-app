@@ -4,13 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/api/api_exception.dart';
+import '../../core/auth/session.dart';
 import '../../core/models/product.dart';
 import '../../core/ui/empty_state.dart';
 import '../../core/ui/error_state.dart';
 import '../../core/ui/product_card.dart';
 import '../../core/ui/skeleton.dart';
 import '../account/account_menu.dart';
+import '../cart/cart_notifier.dart';
 import '../cart/widgets/cart_action.dart';
+import 'catalog_repository.dart';
 import 'home_providers.dart';
 import 'widgets/store_banner.dart';
 
@@ -40,6 +44,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  /// Adds one unit of [product]'s default variant and shows a SnackBar with
+  /// Undo (ProductCard: "Quick-add adds one unit of the default variant").
+  Future<void> _quickAdd(ProductSummary product) async {
+    if (!ref.read(sessionProvider).isSignedIn) {
+      context.push('/login?from=${Uri.encodeComponent('/')}');
+      return;
+    }
+    try {
+      final full = await ref
+          .read(catalogRepositoryProvider)
+          .product(product.id);
+      final variants = full.activeVariants;
+      final variant = variants.isEmpty
+          ? null
+          : variants.firstWhere((v) => v.inStock, orElse: () => variants.first);
+      if (variant == null || !variant.inStock) return;
+      final previousQty =
+          ref
+              .read(cartProvider)
+              .value
+              ?.items
+              .where((l) => l.variantId == variant.id)
+              .fold(0, (sum, l) => sum + l.qty) ??
+          0;
+      await ref.read(cartProvider.notifier).add(variant.id, 1);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 3),
+            content: const Text('Added to cart'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () => ref
+                  .read(cartProvider.notifier)
+                  .setQty(variant.id, previousQty),
+            ),
+          ),
+        );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(errorMessage(e))));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final query = ref.watch(homeQueryProvider);
@@ -66,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 data: (s) => StoreBanner(store: s),
                 loading: () => const Padding(
                   padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Skeleton(height: 64, radius: 12),
+                  child: Skeleton(height: 64, radius: 8),
                 ),
                 error: (e, _) => StoreBannerError(
                   onRetry: () => ref.invalidate(storeProvider),
@@ -96,9 +148,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   .setSearch('');
                             },
                           ),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
                     isDense: true,
                   ),
                 ),
@@ -160,8 +209,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
                             childAspectRatio: 0.72,
                           ),
                       delegate: SliverChildBuilderDelegate((context, i) {
@@ -169,6 +218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         return ProductCard(
                           product: p,
                           onTap: () => context.push('/products/${p.id}'),
+                          onQuickAdd: p.inStock ? () => _quickAdd(p) : null,
                         );
                       }, childCount: page.items.length),
                     ),

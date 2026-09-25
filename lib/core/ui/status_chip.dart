@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'order_status.dart';
 
-/// Compact status pill; label + icon so colour is never the only signal.
+/// Order status as glyph + label on its tone container (`radius-xs`), so
+/// colour is never the only signal. Not a Material Chip: it isn't tappable.
 class StatusChip extends StatelessWidget {
   const StatusChip({super.key, required this.status, this.owner = false});
 
@@ -12,23 +13,22 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = OrderStatusUi.of(status);
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: ui.container(scheme),
-        borderRadius: BorderRadius.circular(999),
+        color: ui.container(theme),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(ui.icon, size: 14, color: ui.onContainer(scheme)),
+          Icon(ui.icon, size: 14, color: ui.onContainer(theme)),
           const SizedBox(width: 4),
           Text(
             ui.label(owner: owner),
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: ui.onContainer(scheme),
-              fontWeight: FontWeight.w600,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: ui.onContainer(theme),
             ),
           ),
         ],
