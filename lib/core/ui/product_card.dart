@@ -72,6 +72,7 @@ class ProductCard extends StatelessWidget {
                         child: PriceText(
                           product.price,
                           unit: product.unit,
+                          unitBeneath: true,
                           color: inStock ? null : scheme.onSurfaceVariant,
                         ),
                       ),

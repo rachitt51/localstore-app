@@ -16,6 +16,7 @@ class PriceText extends StatelessWidget {
     this.size = PriceSize.md,
     this.style,
     this.unit,
+    this.unitBeneath = false,
     this.color,
   });
 
@@ -27,6 +28,10 @@ class PriceText extends StatelessWidget {
 
   /// Appended as `/unit` when given.
   final String? unit;
+
+  /// Puts the unit on its own line beneath the amount (ProductCard:
+  /// "price (unit beneath) beside quick-add. Price never truncates").
+  final bool unitBeneath;
   final Color? color;
 
   static TextStyle styleFor(PriceSize size) => switch (size) {
@@ -42,20 +47,30 @@ class PriceText extends StatelessWidget {
     final base = style != null
         ? style!.copyWith(fontFeatures: const [FontFeature.tabularFigures()])
         : styleFor(size).copyWith(color: scheme.onSurface);
+    final unitStyle = lsPrice(
+      12,
+      16,
+      FontWeight.w500,
+    ).copyWith(color: scheme.onSurfaceVariant);
+    if (unitBeneath && unit != null && unit!.isNotEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            formatInr(amount),
+            style: color != null ? base.copyWith(color: color) : base,
+          ),
+          Text('/ $unit', style: unitStyle),
+        ],
+      );
+    }
     return Text.rich(
       TextSpan(
         text: formatInr(amount),
         style: color != null ? base.copyWith(color: color) : base,
         children: [
           if (unit != null && unit!.isNotEmpty)
-            TextSpan(
-              text: ' / $unit',
-              style: lsPrice(
-                12,
-                16,
-                FontWeight.w500,
-              ).copyWith(color: scheme.onSurfaceVariant),
-            ),
+            TextSpan(text: ' / $unit', style: unitStyle),
         ],
       ),
     );
