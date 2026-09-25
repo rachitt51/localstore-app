@@ -134,6 +134,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (!_otpSent) ...[
+              Center(child: Image.asset('assets/brand/logo.png', height: 72)),
+              const SizedBox(height: 16),
+            ],
             Text(
               _otpSent ? 'Enter the code' : 'Your mobile number',
               style: text.headlineSmall,
