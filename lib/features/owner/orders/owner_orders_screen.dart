@@ -38,7 +38,7 @@ class _OwnerOrdersScreenState extends ConsumerState<OwnerOrdersScreen> {
           ),
           loading: () => const Padding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Skeleton(height: 136, radius: 8),
+            child: Skeleton(height: 164, radius: 8),
           ),
           error: (_, _) => const SizedBox.shrink(),
         ),
@@ -226,38 +226,46 @@ class _SummaryTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          height: 64,
-          padding: const EdgeInsets.all(12),
+          height: 78,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: active
                 ? Border.all(color: scheme.secondary, width: 2)
                 : null,
           ),
-          child: Row(
+          // Count/revenue and the icon share the top line; the label gets the
+          // full tile width below so long labels ("Out for delivery") are not
+          // truncated by the icon column.
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 18, color: onContainer),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (money != null)
-                      PriceText(money!, size: PriceSize.lg, color: onContainer)
-                    else
-                      Text(
-                        value ?? '',
-                        style: text.headlineSmall?.copyWith(color: onContainer),
+              Row(
+                children: [
+                  Icon(icon, size: 18, color: onContainer),
+                  const SizedBox(width: 6),
+                  if (money != null)
+                    Expanded(
+                      child: PriceText(
+                        money!,
+                        size: PriceSize.lg,
+                        color: onContainer,
                       ),
+                    )
+                  else
                     Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.labelSmall?.copyWith(color: onContainer),
+                      value ?? '',
+                      style: text.headlineSmall?.copyWith(color: onContainer),
                     ),
-                  ],
-                ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: text.labelSmall?.copyWith(color: onContainer),
               ),
             ],
           ),
