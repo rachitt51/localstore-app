@@ -97,7 +97,10 @@ class _VisitScreenState extends ConsumerState<VisitScreen> {
       await ref.read(visitsProvider.notifier).cancel(visit.id);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, content: Text(errorMessage(e)));
+      showAppSnackBar(
+        ScaffoldMessenger.of(context),
+        content: Text(errorMessage(e)),
+      );
     }
   }
 
