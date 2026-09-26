@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'ls_theme.dart';
@@ -104,12 +105,22 @@ class ProductImage extends StatelessWidget {
       dim: dim,
     );
     if (url == null || url!.isEmpty) return placeholder();
-    final image = CachedNetworkImage(
-      imageUrl: url!,
-      fit: fit,
-      placeholder: (_, _) => placeholder(),
-      errorWidget: (_, _, _) => placeholder(),
-    );
+    // cached_network_image's cache manager is unreliable on web (the browser
+    // fetches the bytes but decoding fails, so every photo falls back to the
+    // placeholder). On web use the browser's native image path; keep disk
+    // caching on mobile where it works well.
+    final image = kIsWeb
+        ? Image.network(
+            url!,
+            fit: fit,
+            errorBuilder: (_, _, _) => placeholder(),
+          )
+        : CachedNetworkImage(
+            imageUrl: url!,
+            fit: fit,
+            placeholder: (_, _) => placeholder(),
+            errorWidget: (_, _, _) => placeholder(),
+          );
     return dim ? Opacity(opacity: 0.45, child: image) : image;
   }
 }
