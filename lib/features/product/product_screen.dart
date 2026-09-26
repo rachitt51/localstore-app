@@ -62,15 +62,15 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     try {
       await ref.read(cartProvider.notifier).add(variant.id, _qty);
       if (!mounted) return;
-      // Short: the timer restarts on route transitions, so a long one
-      // follows the user through the checkout funnel.
+      // bottomInset clears the Buy now / Add to cart bar at the screen bottom.
       showAppSnackBar(
-        context,
+        ScaffoldMessenger.of(context),
         content: Text('Added $_qty to cart'),
         action: SnackBarAction(
           label: 'View cart',
           onPressed: () => context.push('/cart'),
         ),
+        bottomInset: 76,
       );
     } catch (e) {
       setState(() => _error = errorMessage(e));

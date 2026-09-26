@@ -230,7 +230,7 @@ class _ProductFormState extends ConsumerState<_ProductForm> {
       ref.invalidate(ownerProductListProvider);
       if (!mounted) return;
       showAppSnackBar(
-        context,
+        ScaffoldMessenger.of(context),
         content: Text(existing == null ? 'Product added' : 'Saved'),
       );
       if (context.canPop()) {

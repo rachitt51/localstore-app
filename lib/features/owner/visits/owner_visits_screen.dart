@@ -37,7 +37,12 @@ class _OwnerVisitsScreenState extends ConsumerState<OwnerVisitsScreen> {
       await ref.read(ownerVisitsProvider(_segment).notifier).confirm(visit.id);
       _invalidateAll();
     } catch (e) {
-      if (mounted) showAppSnackBar(context, content: Text(errorMessage(e)));
+      if (mounted) {
+        showAppSnackBar(
+          ScaffoldMessenger.of(context),
+          content: Text(errorMessage(e)),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busyId = null);
     }
@@ -59,7 +64,12 @@ class _OwnerVisitsScreenState extends ConsumerState<OwnerVisitsScreen> {
           .decline(visit.id, note: note);
       _invalidateAll();
     } catch (e) {
-      if (mounted) showAppSnackBar(context, content: Text(errorMessage(e)));
+      if (mounted) {
+        showAppSnackBar(
+          ScaffoldMessenger.of(context),
+          content: Text(errorMessage(e)),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busyId = null);
     }
