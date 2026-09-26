@@ -106,6 +106,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                     warning: cart.warningFor(line.variantId),
                     busy: _busyVariant == line.variantId,
                     onQty: (q) => _setQty(line.variantId, q),
+                    onRemove: () => _setQty(line.variantId, 0),
                   ),
                 if (_error != null)
                   Padding(
@@ -173,12 +174,14 @@ class _CartLineTile extends StatelessWidget {
     required this.warning,
     required this.busy,
     required this.onQty,
+    required this.onRemove,
   });
 
   final CartLine line;
   final CartWarning? warning;
   final bool busy;
   final ValueChanged<int> onQty;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -205,11 +208,30 @@ class _CartLineTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      line.name,
-                      style: text.titleSmall,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            line.name,
+                            style: text.titleSmall,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Remove item',
+                          onPressed: busy ? null : onRemove,
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                          color: scheme.onSurfaceVariant,
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints.tightFor(
+                            width: 36,
+                            height: 36,
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
                     ),
                     if (line.variantName != null &&
                         line.variantName!.isNotEmpty)
@@ -224,7 +246,7 @@ class _CartLineTile extends StatelessWidget {
                       children: [
                         QtyStepper(
                           value: line.qty,
-                          min: 0,
+                          min: 1,
                           max: line.stockQty > 0 ? line.stockQty : line.qty,
                           enabled: !busy,
                           compact: true,

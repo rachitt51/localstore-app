@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/auth/session.dart';
+import '../../core/models/cart.dart';
 import '../../core/models/product.dart';
 import '../../core/ui/app_snackbar.dart';
 import '../../core/ui/empty_state.dart';
@@ -49,14 +50,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  /// Adds one unit of [product]'s default variant and shows a SnackBar with
-  /// Undo (ProductCard: "Quick-add adds one unit of the default variant").
+  /// The [product]'s current cart line, if any (quick-add keeps one line per
+  /// product, so the card's −/+ act on it).
+  CartLine? _cartLine(ProductSummary product) {
+    for (final l in ref.read(cartProvider).value?.items ?? const <CartLine>[]) {
+      if (l.productId == product.id) return l;
+    }
+    return null;
+  }
+
+  /// The card's + button: bumps the existing line if there is one (silent, so
+  /// stepping is quiet), else adds the default variant and confirms with an
+  /// Undo SnackBar.
   Future<void> _quickAdd(ProductSummary product) async {
     if (!ref.read(sessionProvider).isSignedIn) {
       context.push('/login?from=${Uri.encodeComponent('/')}');
       return;
     }
     try {
+      final existing = _cartLine(product);
+      if (existing != null) {
+        await ref
+            .read(cartProvider.notifier)
+            .setQty(existing.variantId, existing.qty + 1);
+        return;
+      }
       final full = await ref
           .read(catalogRepositoryProvider)
           .product(product.id);
@@ -65,14 +83,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ? null
           : variants.firstWhere((v) => v.inStock, orElse: () => variants.first);
       if (variant == null || !variant.inStock) return;
-      final previousQty =
-          ref
-              .read(cartProvider)
-              .value
-              ?.items
-              .where((l) => l.variantId == variant.id)
-              .fold(0, (sum, l) => sum + l.qty) ??
-          0;
       await ref.read(cartProvider.notifier).add(variant.id, 1);
       final messenger = _messengerKey.currentState;
       if (!mounted || messenger == null) return;
@@ -82,9 +92,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () =>
-              ref.read(cartProvider.notifier).setQty(variant.id, previousQty),
+              ref.read(cartProvider.notifier).setQty(variant.id, 0),
         ),
       );
+    } catch (e) {
+      final messenger = _messengerKey.currentState;
+      if (!mounted || messenger == null) return;
+      showAppSnackBar(messenger, content: Text(errorMessage(e)));
+    }
+  }
+
+  /// The card stepper's − button: drops one unit, clearing the line at one.
+  Future<void> _quickRemove(ProductSummary product) async {
+    final existing = _cartLine(product);
+    if (existing == null) return;
+    try {
+      await ref
+          .read(cartProvider.notifier)
+          .setQty(existing.variantId, existing.qty - 1);
     } catch (e) {
       final messenger = _messengerKey.currentState;
       if (!mounted || messenger == null) return;
@@ -240,6 +265,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             product: p,
                             onTap: () => context.push('/products/${p.id}'),
                             onQuickAdd: p.inStock ? () => _quickAdd(p) : null,
+                            onQuickRemove: () => _quickRemove(p),
                             cartQty: cartQty,
                           );
                         }, childCount: page.items.length),

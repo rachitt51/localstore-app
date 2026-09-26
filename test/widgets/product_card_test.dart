@@ -34,18 +34,35 @@ void main() {
     expect(tapped, isTrue);
   });
 
-  testWidgets('shows a cart-quantity badge on the quick-add button', (
+  testWidgets('in cart: shows the −/count/+ stepper with the quantity', (
     tester,
   ) async {
     final product = ProductSummary.fromJson(productJson());
+    var added = false;
+    var removed = false;
     await tester.pumpWidget(
-      _wrap(ProductCard(product: product, onQuickAdd: () {}, cartQty: 3)),
+      _wrap(
+        ProductCard(
+          product: product,
+          onQuickAdd: () => added = true,
+          onQuickRemove: () => removed = true,
+          cartQty: 3,
+        ),
+      ),
     );
 
     expect(find.text('3'), findsOneWidget);
+    // The stepper replaces the plain add button and the stock line.
+    expect(find.byIcon(Icons.remove), findsOneWidget);
+    expect(find.textContaining('in stock'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Icons.remove));
+    expect(added, isTrue);
+    expect(removed, isTrue);
   });
 
-  testWidgets('no badge when nothing of this product is in the cart', (
+  testWidgets('not in cart: shows the plain add button and stock', (
     tester,
   ) async {
     final product = ProductSummary.fromJson(productJson());
@@ -53,9 +70,9 @@ void main() {
       _wrap(ProductCard(product: product, onQuickAdd: () {})),
     );
 
-    expect(find.byType(Badge), findsOneWidget);
-    final badge = tester.widget<Badge>(find.byType(Badge));
-    expect(badge.isLabelVisible, isFalse);
+    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(find.byIcon(Icons.remove), findsNothing);
+    expect(find.text('12 sheets in stock'), findsOneWidget);
   });
 
   testWidgets('shows the out-of-stock badge', (tester) async {
