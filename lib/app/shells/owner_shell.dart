@@ -39,7 +39,11 @@ class OwnerShell extends ConsumerWidget {
             children: [
               _OwnerTag(ls: ls, theme: theme),
               const SizedBox(width: 8),
-              Text(shell.currentIndex == 0 ? 'Orders' : 'Products'),
+              Text(switch (shell.currentIndex) {
+                0 => 'Orders',
+                1 => 'Products',
+                _ => 'Visits',
+              }),
             ],
           ),
           actions: [
@@ -66,6 +70,11 @@ class OwnerShell extends ConsumerWidget {
               icon: Icon(Icons.inventory_2_outlined),
               selectedIcon: Icon(Icons.inventory_2),
               label: 'Products',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.event_available_outlined),
+              selectedIcon: Icon(Icons.event_available),
+              label: 'Visits',
             ),
           ],
         ),

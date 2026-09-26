@@ -14,6 +14,7 @@ class ProductCard extends StatelessWidget {
     required this.product,
     this.onTap,
     this.onQuickAdd,
+    this.cartQty = 0,
   });
 
   final ProductSummary product;
@@ -21,6 +22,11 @@ class ProductCard extends StatelessWidget {
 
   /// Adds one unit of the default variant; hidden when out of stock.
   final VoidCallback? onQuickAdd;
+
+  /// Units of this product already in the signed-in customer's cart, shown
+  /// as a small badge on the quick-add button so adding gives visible
+  /// feedback right on the card.
+  final int cartQty;
 
   @override
   Widget build(BuildContext context) {
@@ -77,20 +83,25 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                       if (inStock && onQuickAdd != null)
-                        IconButton.filled(
-                          tooltip: 'Add to cart',
-                          onPressed: onQuickAdd,
-                          iconSize: 18,
-                          constraints: const BoxConstraints.tightFor(
-                            width: 36,
-                            height: 36,
-                          ),
-                          style: IconButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                        Badge.count(
+                          count: cartQty,
+                          isLabelVisible: cartQty > 0,
+                          alignment: AlignmentDirectional.topStart,
+                          child: IconButton.filled(
+                            tooltip: 'Add to cart',
+                            onPressed: onQuickAdd,
+                            iconSize: 18,
+                            constraints: const BoxConstraints.tightFor(
+                              width: 36,
+                              height: 36,
                             ),
+                            style: IconButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            icon: const Icon(Icons.add),
                           ),
-                          icon: const Icon(Icons.add),
                         ),
                     ],
                   ),

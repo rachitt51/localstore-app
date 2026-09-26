@@ -51,6 +51,10 @@ void main() {
       expect(redirect(guest, '/cart'), startsWith('/login?from='));
       expect(redirect(guest, '/account/addresses'), startsWith('/login?from='));
       expect(redirect(guest, '/owner'), startsWith('/login?from='));
+      expect(
+        redirect(guest, '/visit'),
+        '/login?from=${Uri.encodeComponent('/visit')}',
+      );
     });
   });
 
@@ -62,12 +66,14 @@ void main() {
       expect(redirect(session, '/orders'), isNull);
       expect(redirect(session, '/orders/o1'), isNull);
       expect(redirect(session, '/checkout'), isNull);
+      expect(redirect(session, '/visit'), isNull);
     });
 
     test('is blocked from /owner/**', () {
       expect(redirect(session, '/owner'), '/');
       expect(redirect(session, '/owner/orders/o1'), '/');
       expect(redirect(session, '/owner/products/new'), '/');
+      expect(redirect(session, '/owner/visits'), '/');
     });
 
     test('leaves /login for the from target, else home', () {
@@ -84,6 +90,10 @@ void main() {
       expect(redirect(const SessionState.signedIn(owner), '/owner'), isNull);
       expect(
         redirect(const SessionState.signedIn(staff), '/owner/products'),
+        isNull,
+      );
+      expect(
+        redirect(const SessionState.signedIn(owner), '/owner/visits'),
         isNull,
       );
     });
@@ -123,7 +133,10 @@ void main() {
   test('path helpers', () {
     expect(isProtectedPath('/ordersx'), isFalse);
     expect(isProtectedPath('/orders'), isTrue);
+    expect(isProtectedPath('/visit'), isTrue);
+    expect(isProtectedPath('/visitx'), isFalse);
     expect(isOwnerPath('/ownerx'), isFalse);
     expect(isOwnerPath('/owner/orders/1'), isTrue);
+    expect(isOwnerPath('/owner/visits'), isTrue);
   });
 }

@@ -15,7 +15,9 @@ import '../features/owner/orders/owner_order_screen.dart';
 import '../features/owner/orders/owner_orders_screen.dart';
 import '../features/owner/products/owner_products_screen.dart';
 import '../features/owner/products/product_form_screen.dart';
+import '../features/owner/visits/owner_visits_screen.dart';
 import '../features/product/product_screen.dart';
+import '../features/visits/visit_screen.dart';
 import 'redirect.dart';
 import 'shells/customer_shell.dart';
 import 'shells/owner_shell.dart';
@@ -80,6 +82,11 @@ List<RouteBase> buildRoutes() => [
     path: '/account/addresses',
     parentNavigatorKey: rootNavigatorKey,
     builder: (context, state) => const AddressScreen(selectMode: false),
+  ),
+  GoRoute(
+    path: '/visit',
+    parentNavigatorKey: rootNavigatorKey,
+    builder: (context, state) => const VisitScreen(),
   ),
   StatefulShellRoute.indexedStack(
     builder: (context, state, shell) => CustomerShell(shell: shell),
@@ -163,6 +170,14 @@ List<RouteBase> buildRoutes() => [
                     ProductFormScreen(productId: state.pathParameters['id']),
               ),
             ],
+          ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: '/owner/visits',
+            builder: (context, state) => const OwnerVisitsScreen(),
           ),
         ],
       ),
